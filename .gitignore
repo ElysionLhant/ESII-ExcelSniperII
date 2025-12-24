@@ -1,0 +1,21 @@
+# Visual Studio
+.vs/
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.pdb
+
+# VSTO
+*.vsto
+*.vtg
+
+# Node.js (from previous web add-in attempt)
+node_modules/
+npm-debug.log
+
+# User specific
+*.local
+settings.json
+prompts.json
