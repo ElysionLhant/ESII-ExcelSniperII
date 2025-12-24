@@ -1,52 +1,68 @@
-# AI Excel 智能填充侧边栏
+﻿# Excel AI 智能助手 (VSTO 版)
 
-这是一个 Excel Web 加载项（Add-in），集成了 LLM（OpenAI、火山引擎等），可以根据上下文自动填充 Excel 表格。
+这是一个基于 .NET Framework 4.7.2 开发的 Excel VSTO 加载项（Add-in），深度集成了 LLM（OpenAI、火山引擎等），旨在通过 AI 辅助自动化 Excel 数据处理任务。
 
-## 功能特性
+##  核心功能
 
-- **选区捕获**：捕获当前选中区域的坐标和截图。
-- **上下文素材**：支持拖拽图片、文本文件（txt, csv, md, json）或 PDF。插件会读取文件内容并发送给 LLM 作为参考。
-- **Prompt 管理**：保存、加载和管理自定义 Prompt 预设。内置了常用任务的默认预设。
-- **真实 LLM 集成**：可配置 API 端点（兼容 OpenAI 协议）来生成数据。
-- **自动扩展**：如果 LLM 生成的数据行数多于选区行数，插件会自动向下扩展 Excel 区域并保留格式。
+### 1. 智能填充与生成
+- **选区捕获**：一键捕获当前 Excel 选区的截图和坐标信息。
+- **多模态上下文**：
+  - **文件拖拽**：支持拖拽文本文件（.txt, .csv, .json, .md）作为参考资料。
+  - **图片支持**：直接拖拽图片文件（.png, .jpg 等），插件会自动将其作为视觉上下文发送给多模态大模型。
+  - **手动输入**：提供文本框直接粘贴补充信息。
+- **智能回填**：LLM 生成的结构化数据会自动填充回 Excel 表格，支持自动扩展行列。
 
-## 如何运行
+### 2. Prompt (提示词) 管理
+- **预设库**：内置常用任务 Prompt（如发票提取、数据清洗）。
+- **自定义管理**：支持保存、加载和删除自定义 Prompt，配置持久化保存。
 
-1. **前置条件**：
-   - 已安装 Node.js（用于运行本地服务器）。
-   - 拥有兼容 OpenAI 协议服务的 API Key（例如 OpenAI, 火山引擎/Ark）。
+### 3. 宏 (Macro) 代码库 
+- **VBA 管理**：在侧边栏直接管理常用的 VBA 宏代码。
+- **一键运行**：无需打开 VBA 编辑器，直接点击运行即可执行选中的宏。
+- **持久化存储**：宏代码库保存在本地，跨工作簿可用。
+- *注意：运行宏功能需要在 Excel 信任中心开启信任对 VBA 工程对象模型的访问。*
 
-2. **启动本地服务器**：
-   在当前文件夹打开终端并运行：
-   ```bash
-   npx browser-sync start --server --https --files "." --index "taskpane.html" --port 3000
-   ```
-   *注意：这将启动一个安全的本地服务器。你可能需要在浏览器中接受证书警告。*
+### 4. 系统设置
+- **API 配置**：支持自定义 OpenAI 兼容接口（Base URL, API Key, Model Name）。
+- **持久化**：所有设置和预设均保存在本地 AppData 目录，重启 Excel 不丢失。
 
-3. **信任证书**：
-   在浏览器中打开显示的 URL（例如 `https://localhost:3000/taskpane.html`）。你可能会看到安全警告。点击“高级” -> “继续前往 localhost（不安全）”以临时信任此会话。
+##  技术栈
 
-4. **在 Excel 中旁加载 (Sideload)**：
-   - 打开 Excel（桌面版或网页版）。
-   - 转到 **插入 (Insert)** 选项卡。
-   - 点击 **获取加载项 (Get Add-ins)**。
-   - 点击 **我的加载项 (My Add-ins)**。
-   - 选择 **上传我的加载项 (Upload My Add-in)**（通常在“管理我的加载项”下拉菜单下）。
-   - 选择此文件夹中的 `manifest.xml` 文件。
+- **框架**：.NET Framework 4.7.2, VSTO (Visual Studio Tools for Office)
+- **语言**：C#
+- **UI**：WinForms (使用 FlowLayoutPanel 实现自适应布局)
+- **网络**：HttpClient (支持 TLS 1.2)
+- **数据**：JSON 序列化存储
 
-5. **配置**：
-   - 在侧边栏中，点击 **⚙️ Settings**。
-   - 输入你的 **API Base URL**（例如 `https://api.openai.com/v1` 或你的火山引擎端点）。
-   - 输入你的 **API Key**。
-   - 输入 **Model Name**（例如 `gpt-4o` 或你的火山引擎端点 ID）。
+##  如何构建与运行
 
-6. **使用方法**：
-   - 在 Excel 中选择一个区域。
-   - 点击 **Capture Selection**。
-   - 如果需要，拖拽参考文件（PDF/文本）。
-   - **选择 Prompt**：从下拉菜单选择预设或输入自定义指令。你可以通过 "Manage" 按钮管理预设。
-   - 点击 **Generate & Fill**。
+1. **环境要求**：
+   - Windows 操作系统
+   - Visual Studio 2019 或更高版本（需安装 "Office/SharePoint 开发" 工作负载）
+   - Microsoft Excel
 
-## 自定义
+2. **打开项目**：
+   - 使用 Visual Studio 打开 ExcelSP2/ExcelSP2.sln 解决方案文件。
 
-- **图标**：`manifest.xml` 指向 `assets/` 中的占位符图标。你可以用真实的 PNG 图片替换它们。
+3. **编译运行**：
+   - 点击 Start 或按 F5。
+   - Visual Studio 会自动编译并启动 Excel，加载项将出现在侧边栏或功能区中。
+
+4. **宏功能配置**（如果使用宏库）：
+   - 在 Excel 中，前往 **文件 > 选项 > 信任中心 > 信任中心设置 > 宏设置**。
+   - 勾选 **信任对 VBA 工程对象模型的访问**。
+
+##  使用指南
+
+1. **配置 API**：首次使用请点击侧边栏底部的 " Settings"，填入你的 LLM API 信息。
+2. **捕获数据**：选中 Excel 中的数据区域，点击 "Capture Selection"。
+3. **添加素材**：将相关的参考文件或图片拖入 "Context Materials" 列表。
+4. **选择指令**：在 Prompt 下拉框选择任务类型，或直接修改文本框内容。
+5. **生成**：点击 "Generate & Fill"，等待 AI 处理并回填数据。
+6. **运行宏**：在 "Macro Library" 区域选择或粘贴代码，点击 "Run" 执行自动化脚本。
+
+##  常见问题
+
+- **UI 显示不全？**：插件使用了自适应布局，尝试调整侧边栏宽度。
+- **API 报错？**：请检查 API Key 是否过期，以及网络是否能连通 Base URL。
+- **宏无法运行？**：请确保已开启 Excel 的 VBA 信任权限。

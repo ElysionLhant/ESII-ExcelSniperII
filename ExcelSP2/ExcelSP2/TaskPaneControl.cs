@@ -9,12 +9,20 @@ using System.IO;
 using System.Web.Script.Serialization;
 using Excel = Microsoft.Office.Interop.Excel;
 
+using System.Text.RegularExpressions;
+
 namespace ExcelSP2
 {
     public class PromptPreset
     {
         public string Title { get; set; }
         public string Content { get; set; }
+    }
+
+    public class MacroPreset
+    {
+        public string Title { get; set; }
+        public string Code { get; set; }
     }
 
     public class AppSettings
@@ -40,6 +48,13 @@ namespace ExcelSP2
         private Button btnSavePrompt;
         private Button btnDeletePrompt;
         private TextBox txtPrompt;
+
+        // Macro Controls
+        private ComboBox cmbMacros;
+        private Button btnRunMacro;
+        private Button btnSaveMacro;
+        private Button btnDeleteMacro;
+        private TextBox txtMacroCode;
         
         private Button btnRun;
         private Button btnSettings;
@@ -54,13 +69,16 @@ namespace ExcelSP2
         private string capturedImageBase64;
         private List<string> filePaths = new List<string>();
         private List<PromptPreset> promptPresets;
+        private List<MacroPreset> macroPresets;
         private string promptsFilePath;
+        private string macrosFilePath;
         private string settingsFilePath;
 
         public TaskPaneControl()
         {
             InitializeComponent();
             InitializePrompts();
+            InitializeMacros();
             SetupCustomUI();
             InitializeSettings();
         }
@@ -95,11 +113,46 @@ namespace ExcelSP2
             }
         }
 
+        private void InitializeMacros()
+        {
+            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            string folder = Path.Combine(appData, "ExcelAIPlugin");
+            if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+            macrosFilePath = Path.Combine(folder, "macros.json");
+
+            if (File.Exists(macrosFilePath))
+            {
+                try
+                {
+                    string json = File.ReadAllText(macrosFilePath);
+                    var serializer = new JavaScriptSerializer();
+                    macroPresets = serializer.Deserialize<List<MacroPreset>>(json);
+                }
+                catch { macroPresets = null; }
+            }
+
+            if (macroPresets == null)
+            {
+                macroPresets = new List<MacroPreset>
+                {
+                    new MacroPreset { Title = "HelloWorld", Code = "Sub HelloWorld()\n    MsgBox \"Hello from VSTO!\"\nEnd Sub" }
+                };
+                SaveMacros();
+            }
+        }
+
         private void SavePrompts()
         {
             var serializer = new JavaScriptSerializer();
             string json = serializer.Serialize(promptPresets);
             File.WriteAllText(promptsFilePath, json);
+        }
+
+        private void SaveMacros()
+        {
+            var serializer = new JavaScriptSerializer();
+            string json = serializer.Serialize(macroPresets);
+            File.WriteAllText(macrosFilePath, json);
         }
 
         private void InitializeSettings()
@@ -147,93 +200,119 @@ namespace ExcelSP2
             this.Padding = new Padding(10);
             this.BackColor = Color.WhiteSmoke;
 
-            int y = 10;
-            int width = 280;
+            // Use FlowLayoutPanel for automatic layout
+            FlowLayoutPanel panel = new FlowLayoutPanel();
+            panel.Dock = DockStyle.Fill;
+            panel.FlowDirection = FlowDirection.TopDown;
+            panel.WrapContents = false;
+            panel.AutoScroll = true;
+            this.Controls.Add(panel);
+
+            int width = 260; // Slightly less to account for scrollbar
 
             // 1. Selection Section
-            AddHeader("1. Selection", ref y);
+            panel.Controls.Add(CreateHeader("1. Selection"));
             
-            btnCapture = new Button { Text = "Capture Selection", Top = y, Left = 10, Width = width, Height = 30, BackColor = Color.White, FlatStyle = FlatStyle.Flat };
+            btnCapture = new Button { Text = "Capture Selection", Width = width, Height = 30, BackColor = Color.White, FlatStyle = FlatStyle.Flat, Margin = new Padding(3, 3, 3, 3) };
             btnCapture.Click += BtnCapture_Click;
-            this.Controls.Add(btnCapture);
-            y += 35;
+            panel.Controls.Add(btnCapture);
 
-            lblSelectionInfo = new Label { Text = "No selection captured.", Top = y, Left = 10, Width = width, ForeColor = Color.Gray };
-            this.Controls.Add(lblSelectionInfo);
-            y += 20;
+            lblSelectionInfo = new Label { Text = "No selection captured.", Width = width, ForeColor = Color.Gray, AutoSize = true, Margin = new Padding(3, 5, 3, 5) };
+            panel.Controls.Add(lblSelectionInfo);
 
-            picPreview = new PictureBox { Top = y, Left = 10, Width = width, Height = 100, SizeMode = PictureBoxSizeMode.Zoom, BorderStyle = BorderStyle.FixedSingle, Visible = false };
-            this.Controls.Add(picPreview);
-            // Note: We don't increment y here for the hidden image, we'll adjust layout dynamically if needed, 
-            // or just reserve space. For simplicity in VSTO, let's reserve space or put it at the bottom?
-            // Let's put it here but hidden. If it becomes visible, it might overlap. 
-            // Better approach: FlowLayoutPanel. But for absolute positioning, let's just reserve a bit or rely on AutoScroll.
-            y += 5; // Placeholder
+            picPreview = new PictureBox { Width = width, Height = 100, SizeMode = PictureBoxSizeMode.Zoom, BorderStyle = BorderStyle.FixedSingle, Visible = false, Margin = new Padding(3, 5, 3, 5) };
+            panel.Controls.Add(picPreview);
 
             // 2. Context Section
-            AddHeader("2. Context Materials", ref y);
+            panel.Controls.Add(CreateHeader("2. Context Materials"));
             
-            lstFiles = new ListBox { Top = y, Left = 10, Width = width, Height = 80, AllowDrop = true, ForeColor = Color.Gray };
+            lstFiles = new ListBox { Width = width, Height = 80, AllowDrop = true, ForeColor = Color.Gray };
             lstFiles.Items.Add("[Drag files here...]");
             lstFiles.DragEnter += LstFiles_DragEnter;
             lstFiles.DragDrop += LstFiles_DragDrop;
             lstFiles.KeyDown += LstFiles_KeyDown;
-            this.Controls.Add(lstFiles);
-            y += 85;
+            panel.Controls.Add(lstFiles);
 
-            Label lblManualContext = new Label { Text = "Or paste text:", Top = y, Left = 10, Width = width, Height = 15, ForeColor = Color.DimGray, Font = new Font(this.Font.FontFamily, 8) };
-            this.Controls.Add(lblManualContext);
-            y += 18;
+            Label lblManualContext = new Label { Text = "Or paste text:", Width = width, Height = 15, ForeColor = Color.DimGray, Font = new Font(this.Font.FontFamily, 8), Margin = new Padding(3, 10, 3, 0) };
+            panel.Controls.Add(lblManualContext);
 
-            txtContext = new TextBox { Top = y, Left = 10, Width = width, Height = 60, Multiline = true, ScrollBars = ScrollBars.Vertical };
-            this.Controls.Add(txtContext);
-            y += 65;
+            txtContext = new TextBox { Width = width, Height = 60, Multiline = true, ScrollBars = ScrollBars.Vertical };
+            panel.Controls.Add(txtContext);
 
             // 3. Prompt Section
-            AddHeader("3. Prompt", ref y);
+            panel.Controls.Add(CreateHeader("3. Prompt"));
 
-            // Prompt Management Row
-            cmbPrompts = new ComboBox { Top = y, Left = 10, Width = 180, DropDownStyle = ComboBoxStyle.DropDownList };
+            // Prompt Management Row (Need a sub-panel for horizontal layout)
+            FlowLayoutPanel pnlPrompts = new FlowLayoutPanel { Width = width, Height = 30, FlowDirection = FlowDirection.LeftToRight, Margin = new Padding(0) };
+            
+            cmbPrompts = new ComboBox { Width = 160, DropDownStyle = ComboBoxStyle.DropDownList };
             RefreshPromptCombo();
             cmbPrompts.SelectedIndexChanged += CmbPrompts_SelectedIndexChanged;
-            this.Controls.Add(cmbPrompts);
+            pnlPrompts.Controls.Add(cmbPrompts);
 
-            btnSavePrompt = new Button { Text = "Save", Top = y, Left = 195, Width = 45, Height = 23, BackColor = Color.White }; 
+            btnSavePrompt = new Button { Text = "Save", Width = 45, Height = 23, BackColor = Color.White }; 
             btnSavePrompt.Click += BtnSavePrompt_Click;
-            this.Controls.Add(btnSavePrompt);
+            pnlPrompts.Controls.Add(btnSavePrompt);
 
-            btnDeletePrompt = new Button { Text = "Del", Top = y, Left = 245, Width = 35, Height = 23, BackColor = Color.White }; 
+            btnDeletePrompt = new Button { Text = "Del", Width = 40, Height = 23, BackColor = Color.White }; 
             btnDeletePrompt.Click += BtnDeletePrompt_Click;
-            this.Controls.Add(btnDeletePrompt);
+            pnlPrompts.Controls.Add(btnDeletePrompt);
             
-            y += 30;
+            panel.Controls.Add(pnlPrompts);
             
-            txtPrompt = new TextBox { Top = y, Left = 10, Width = width, Height = 80, Multiline = true, ScrollBars = ScrollBars.Vertical };
-            if (promptPresets.Count > 0) txtPrompt.Text = promptPresets[0].Content;
-            this.Controls.Add(txtPrompt);
-            y += 85;
+            txtPrompt = new TextBox { Width = width, Height = 80, Multiline = true, ScrollBars = ScrollBars.Vertical };
+            if (promptPresets != null && promptPresets.Count > 0) txtPrompt.Text = promptPresets[0].Content;
+            panel.Controls.Add(txtPrompt);
 
-            // 4. Settings Toggle
-            btnSettings = new Button { Text = "⚙️ Settings", Top = y, Left = 10, Width = 80, Height = 25, Font = new Font(this.Font.FontFamily, 8) };
+            // 4. Macro Section
+            panel.Controls.Add(CreateHeader("4. Macro Library"));
+
+            FlowLayoutPanel pnlMacros = new FlowLayoutPanel { Width = width, Height = 30, FlowDirection = FlowDirection.LeftToRight, Margin = new Padding(0) };
+
+            cmbMacros = new ComboBox { Width = 120, DropDownStyle = ComboBoxStyle.DropDownList };
+            RefreshMacroCombo();
+            cmbMacros.SelectedIndexChanged += CmbMacros_SelectedIndexChanged;
+            pnlMacros.Controls.Add(cmbMacros);
+
+            btnRunMacro = new Button { Text = "Run", Width = 40, Height = 23, BackColor = Color.LightGreen, FlatStyle = FlatStyle.Flat };
+            btnRunMacro.Click += BtnRunMacro_Click;
+            pnlMacros.Controls.Add(btnRunMacro);
+
+            btnSaveMacro = new Button { Text = "Save", Width = 40, Height = 23, BackColor = Color.White };
+            btnSaveMacro.Click += BtnSaveMacro_Click;
+            pnlMacros.Controls.Add(btnSaveMacro);
+
+            btnDeleteMacro = new Button { Text = "Del", Width = 35, Height = 23, BackColor = Color.White };
+            btnDeleteMacro.Click += BtnDeleteMacro_Click;
+            pnlMacros.Controls.Add(btnDeleteMacro);
+
+            panel.Controls.Add(pnlMacros);
+
+            txtMacroCode = new TextBox { Width = width, Height = 80, Multiline = true, ScrollBars = ScrollBars.Vertical, Font = new Font("Consolas", 9) };
+            if (macroPresets != null && macroPresets.Count > 0) txtMacroCode.Text = macroPresets[0].Code;
+            panel.Controls.Add(txtMacroCode);
+
+            // 5. Settings Toggle
+            btnSettings = new Button { Text = "⚙️ Settings", Width = 80, Height = 25, Font = new Font(this.Font.FontFamily, 8), Margin = new Padding(3, 10, 3, 3) };
             btnSettings.Click += (s, e) => { pnlSettings.Visible = !pnlSettings.Visible; };
-            this.Controls.Add(btnSettings);
-            y += 30;
+            panel.Controls.Add(btnSettings);
 
-            pnlSettings = new Panel { Top = y, Left = 10, Width = width, Height = 220, Visible = false, BorderStyle = BorderStyle.FixedSingle, BackColor = Color.White };
+            pnlSettings = new Panel { Width = width, Height = 220, Visible = false, BorderStyle = BorderStyle.FixedSingle, BackColor = Color.White };
             SetupSettingsPanel();
-            this.Controls.Add(pnlSettings);
-            // When settings panel is visible, bring it to front so it covers other controls if needed
-            pnlSettings.BringToFront();
-            y += 5; 
+            panel.Controls.Add(pnlSettings);
 
             // 5. Action
-            btnRun = new Button { Text = "Generate & Fill", Top = y, Left = 10, Width = width, Height = 40, BackColor = Color.DodgerBlue, ForeColor = Color.White, Font = new Font(this.Font, FontStyle.Bold), FlatStyle = FlatStyle.Flat };
+            btnRun = new Button { Text = "Generate & Fill", Width = width, Height = 40, BackColor = Color.DodgerBlue, ForeColor = Color.White, Font = new Font(this.Font, FontStyle.Bold), FlatStyle = FlatStyle.Flat, Margin = new Padding(3, 20, 3, 3) };
             btnRun.Click += BtnRun_Click;
-            this.Controls.Add(btnRun);
-            y += 45;
+            panel.Controls.Add(btnRun);
 
-            lblStatus = new Label { Text = "Ready", Top = y, Left = 10, Width = width, ForeColor = Color.Blue, AutoSize = true, MaximumSize = new Size(width, 0) };
-            this.Controls.Add(lblStatus);
+            lblStatus = new Label { Text = "Ready", Width = width, ForeColor = Color.Blue, AutoSize = true, MaximumSize = new Size(width, 0) };
+            panel.Controls.Add(lblStatus);
+        }
+
+        private Label CreateHeader(string text)
+        {
+            return new Label { Text = text, Width = 200, Font = new Font(this.Font, FontStyle.Bold), Margin = new Padding(3, 15, 3, 5) };
         }
 
         private void SetupSettingsPanel()
@@ -259,12 +338,7 @@ namespace ExcelSP2
             pnlSettings.Controls.Add(btnSaveSettings);
         }
 
-        private void AddHeader(string text, ref int y)
-        {
-            Label h = new Label { Text = text, Top = y, Left = 10, Width = 200, Font = new Font(this.Font, FontStyle.Bold) };
-            this.Controls.Add(h);
-            y += 25;
-        }
+
 
         private void RefreshPromptCombo()
         {
@@ -306,6 +380,92 @@ namespace ExcelSP2
                     RefreshPromptCombo();
                     txtPrompt.Text = "";
                 }
+            }
+        }
+
+        // --- Macro Logic ---
+
+        private void RefreshMacroCombo()
+        {
+            cmbMacros.Items.Clear();
+            foreach (var m in macroPresets)
+            {
+                cmbMacros.Items.Add(m.Title);
+            }
+            if (macroPresets.Count > 0) cmbMacros.SelectedIndex = 0;
+        }
+
+        private void CmbMacros_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (cmbMacros.SelectedIndex >= 0 && cmbMacros.SelectedIndex < macroPresets.Count)
+            {
+                txtMacroCode.Text = macroPresets[cmbMacros.SelectedIndex].Code;
+            }
+        }
+
+        private void BtnSaveMacro_Click(object sender, EventArgs e)
+        {
+            string title = ShowInputDialog("Enter name for this macro:", "Save Macro");
+            if (!string.IsNullOrWhiteSpace(title))
+            {
+                macroPresets.Add(new MacroPreset { Title = title, Code = txtMacroCode.Text });
+                SaveMacros();
+                RefreshMacroCombo();
+                cmbMacros.SelectedIndex = macroPresets.Count - 1;
+            }
+        }
+
+        private void BtnDeleteMacro_Click(object sender, EventArgs e)
+        {
+            if (cmbMacros.SelectedIndex >= 0)
+            {
+                if (MessageBox.Show("Delete this macro?", "Confirm", MessageBoxButtons.YesNo) == DialogResult.Yes)
+                {
+                    macroPresets.RemoveAt(cmbMacros.SelectedIndex);
+                    SaveMacros();
+                    RefreshMacroCombo();
+                    txtMacroCode.Text = "";
+                }
+            }
+        }
+
+        private void BtnRunMacro_Click(object sender, EventArgs e)
+        {
+            string code = txtMacroCode.Text;
+            if (string.IsNullOrWhiteSpace(code)) return;
+
+            try
+            {
+                // 1. Find the Sub name
+                var match = Regex.Match(code, @"Sub\s+(\w+)", RegexOptions.IgnoreCase);
+                if (!match.Success)
+                {
+                    MessageBox.Show("Could not find a 'Sub Name()' in the code. Please ensure your macro starts with 'Sub Name()'.");
+                    return;
+                }
+                string macroName = match.Groups[1].Value;
+
+                // 2. Inject and Run
+                Excel.Application app = Globals.ThisAddIn.Application;
+                
+                // Note: This requires "Trust access to the VBA project object model" in Excel Trust Center
+                dynamic vbProj = app.VBE.ActiveVBProject;
+                dynamic vbComp = vbProj.VBComponents.Add(1); // 1 = vbext_ct_StdModule
+                
+                try 
+                {
+                    vbComp.CodeModule.AddFromString(code);
+                    app.Run(macroName);
+                }
+                finally
+                {
+                    // Cleanup: Remove the module
+                    vbProj.VBComponents.Remove(vbComp);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error running macro. \n\nIMPORTANT: You must enable 'Trust access to the VBA project object model' in Excel Options -> Trust Center -> Trust Center Settings -> Macro Settings.\n\nDetails: " + ex.Message);
             }
         }
 
@@ -436,6 +596,7 @@ namespace ExcelSP2
 
                 // 1. Prepare Context
                 StringBuilder contextBuilder = new StringBuilder();
+                List<string> additionalImages = new List<string>();
 
                 if (!string.IsNullOrWhiteSpace(txtContext.Text))
                 {
@@ -454,6 +615,17 @@ namespace ExcelSP2
                             contextBuilder.AppendLine($"--- File: {Path.GetFileName(file)} ---");
                             contextBuilder.AppendLine(File.ReadAllText(file));
                         }
+                        else if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".bmp" || ext == ".gif")
+                        {
+                            try
+                            {
+                                byte[] bytes = File.ReadAllBytes(file);
+                                string base64 = Convert.ToBase64String(bytes);
+                                additionalImages.Add(base64);
+                                contextBuilder.AppendLine($"--- Image File: {Path.GetFileName(file)} (Attached) ---");
+                            }
+                            catch { }
+                        }
                         else
                         {
                             contextBuilder.AppendLine($"--- File: {Path.GetFileName(file)} ---");
@@ -471,6 +643,14 @@ namespace ExcelSP2
                     userContent.Add(new {
                         type = "image_url",
                         image_url = new { url = $"data:image/png;base64,{capturedImageBase64}" }
+                    });
+                }
+
+                foreach (var imgBase64 in additionalImages)
+                {
+                    userContent.Add(new {
+                        type = "image_url",
+                        image_url = new { url = $"data:image/png;base64,{imgBase64}" }
                     });
                 }
 
@@ -562,7 +742,24 @@ namespace ExcelSP2
             }
 
             Excel.Worksheet sheet = Globals.ThisAddIn.Application.ActiveSheet;
-            Excel.Range startRange = sheet.Range[capturedAddress].Cells[1, 1];
+            Excel.Range startRange;
+
+            if (string.IsNullOrEmpty(capturedAddress))
+            {
+                startRange = Globals.ThisAddIn.Application.ActiveCell;
+            }
+            else
+            {
+                try
+                {
+                    startRange = sheet.Range[capturedAddress].Cells[1, 1];
+                }
+                catch
+                {
+                    startRange = Globals.ThisAddIn.Application.ActiveCell;
+                }
+            }
+
             Excel.Range targetRange = startRange.Resize[rowCount, colCount];
 
             targetRange.Value2 = data;
