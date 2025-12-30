@@ -52,7 +52,8 @@ namespace ExcelSP2
         private Label lblSelectionInfo;
         // private Panel pnlDropZone; // Removed
         // private Label lblDropHint; // Removed
-        private ListBox lstFiles;
+        // private ListBox lstFiles; // Removed
+        private FlowLayoutPanel pnlAttachments; // New Attachments Panel
         private TextBox txtContext;
         
         // Prompt Controls
@@ -276,20 +277,82 @@ namespace ExcelSP2
             panel.Controls.Add(lblSelectionInfo);
 
             // 2. Context Section
-            panel.Controls.Add(CreateHeader("2. Context Materials"));
+            // Header with Add Button
+            FlowLayoutPanel pnlContextHeader = new FlowLayoutPanel { 
+                Width = width, 
+                Height = 30, 
+                FlowDirection = FlowDirection.LeftToRight,
+                Margin = new Padding(0, 15, 0, 0)
+            };
             
-            lstFiles = new ListBox { Width = width, Height = 80, AllowDrop = true, ForeColor = Color.Gray };
-            lstFiles.Items.Add("[Drag files here...]");
-            lstFiles.DragEnter += LstFiles_DragEnter;
-            lstFiles.DragDrop += LstFiles_DragDrop;
-            lstFiles.KeyDown += LstFiles_KeyDown;
-            panel.Controls.Add(lstFiles);
+            Label lblContextTitle = new Label { 
+                Text = "2. Context Materials", 
+                AutoSize = true, 
+                Font = new Font(this.Font, FontStyle.Bold), 
+                Margin = new Padding(3, 5, 3, 0) 
+            };
+            
+            Button btnAddFile = new Button { 
+                Text = "+", 
+                Width = 25, 
+                Height = 23, 
+                BackColor = Color.White, 
+                FlatStyle = FlatStyle.Flat,
+                Margin = new Padding(10, 0, 0, 0)
+            };
+            btnAddFile.Click += BtnAddFile_Click;
+            
+            pnlContextHeader.Controls.Add(lblContextTitle);
+            pnlContextHeader.Controls.Add(btnAddFile);
+            panel.Controls.Add(pnlContextHeader);
+            
+            // Container for the "integrated" look
+            Panel pnlContextInput = new Panel { 
+                Width = width, 
+                Height = 80, 
+                BackColor = Color.White,
+                BorderStyle = BorderStyle.FixedSingle,
+                Margin = new Padding(3, 5, 3, 5)
+            };
+            
+            // Attachments panel (top)
+            pnlAttachments = new FlowLayoutPanel { 
+                Dock = DockStyle.Top, 
+                Height = 0, 
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                BackColor = Color.WhiteSmoke,
+                Padding = new Padding(2),
+                MaximumSize = new Size(0, 45), // Limit height so text box remains visible
+                AutoScroll = true
+            };
+            
+            // Text input (fill rest)
+            txtContext = new TextBox { 
+                Dock = DockStyle.Fill, 
+                Multiline = true, 
+                BorderStyle = BorderStyle.None,
+                ScrollBars = ScrollBars.Vertical,
+                Margin = new Padding(5),
+                Font = new Font("Segoe UI", 9)
+            };
+            txtContext.KeyDown += TxtContext_KeyDown;
+            
+            // Drag & Drop support
+            pnlContextInput.AllowDrop = true;
+            pnlContextInput.DragEnter += Context_DragEnter;
+            pnlContextInput.DragDrop += Context_DragDrop;
+            txtContext.AllowDrop = true;
+            txtContext.DragEnter += Context_DragEnter;
+            txtContext.DragDrop += Context_DragDrop;
 
-            Label lblManualContext = new Label { Text = "Or paste text:", Width = width, Height = 15, ForeColor = Color.DimGray, Font = new Font(this.Font.FontFamily, 8), Margin = new Padding(3, 10, 3, 0) };
-            panel.Controls.Add(lblManualContext);
-
-            txtContext = new TextBox { Width = width, Height = 60, Multiline = true, ScrollBars = ScrollBars.Vertical };
-            panel.Controls.Add(txtContext);
+            pnlContextInput.Controls.Add(txtContext); // Fill first (z-order)
+            pnlContextInput.Controls.Add(pnlAttachments); // Top second
+            
+            panel.Controls.Add(pnlContextInput);
+            
+            Label lblHint = new Label { Text = "Paste images/text or drag files here.", Width = width, ForeColor = Color.Gray, Font = new Font(this.Font.FontFamily, 8), Margin = new Padding(3, 2, 3, 0) };
+            panel.Controls.Add(lblHint);
 
             // 3. Prompt Section
             panel.Controls.Add(CreateHeader("3. Prompt"));
@@ -618,46 +681,132 @@ namespace ExcelSP2
             previewPopup.Hide();
         }
 
-        private void LstFiles_DragEnter(object sender, DragEventArgs e)
+        private void BtnAddFile_Click(object sender, EventArgs e)
+        {
+            using (OpenFileDialog openFileDialog = new OpenFileDialog())
+            {
+                openFileDialog.Multiselect = true;
+                openFileDialog.Filter = "All files (*.*)|*.*";
+                openFileDialog.Title = "Select Context Files";
+                
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    foreach (string file in openFileDialog.FileNames)
+                    {
+                        AddAttachment(file);
+                    }
+                }
+            }
+        }
+
+        private void Context_DragEnter(object sender, DragEventArgs e)
         {
             if (e.Data.GetDataPresent(DataFormats.FileDrop)) e.Effect = DragDropEffects.Copy;
         }
 
-        private void LstFiles_DragDrop(object sender, DragEventArgs e)
+        private void Context_DragDrop(object sender, DragEventArgs e)
         {
-            if (lstFiles.Items.Count == 1 && lstFiles.Items[0].ToString() == "[Drag files here...]")
-            {
-                lstFiles.Items.Clear();
-                lstFiles.ForeColor = Color.Black;
-            }
-
             string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
             foreach (string file in files)
             {
-                if (!filePaths.Contains(file))
+                AddAttachment(file);
+            }
+        }
+
+        private void TxtContext_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Control && e.KeyCode == Keys.V)
+            {
+                // Handle Paste
+                if (Clipboard.ContainsImage())
                 {
-                    filePaths.Add(file);
-                    lstFiles.Items.Add(Path.GetFileName(file));
+                    try
+                    {
+                        Image img = Clipboard.GetImage();
+                        string tempPath = Path.Combine(Path.GetTempPath(), $"pasted_image_{DateTime.Now.Ticks}.png");
+                        img.Save(tempPath, System.Drawing.Imaging.ImageFormat.Png);
+                        AddAttachment(tempPath);
+                        e.Handled = true; // Prevent default paste if we handled image
+                        e.SuppressKeyPress = true; 
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Failed to paste image: " + ex.Message);
+                    }
+                }
+                else if (Clipboard.ContainsFileDropList())
+                {
+                    var files = Clipboard.GetFileDropList();
+                    foreach (string file in files)
+                    {
+                        AddAttachment(file);
+                    }
+                    e.Handled = true;
+                    e.SuppressKeyPress = true;
                 }
             }
         }
 
-        private void LstFiles_KeyDown(object sender, KeyEventArgs e)
+        private void AddAttachment(string filePath)
         {
-            if ((e.KeyCode == Keys.Delete || e.KeyCode == Keys.Back) && lstFiles.SelectedIndex >= 0)
-            {
-                if (lstFiles.Items[lstFiles.SelectedIndex].ToString() == "[Drag files here...]") return;
-                
-                int index = lstFiles.SelectedIndex;
-                filePaths.RemoveAt(index);
-                lstFiles.Items.RemoveAt(index);
+            if (filePaths.Contains(filePath)) return;
+            
+            filePaths.Add(filePath);
 
-                if (lstFiles.Items.Count == 0)
-                {
-                    lstFiles.Items.Add("[Drag files here...]");
-                    lstFiles.ForeColor = Color.Gray;
-                }
-            }
+            // Create Chip UI
+            Panel chip = new Panel { 
+                AutoSize = true, 
+                AutoSizeMode = AutoSizeMode.GrowAndShrink, 
+                BackColor = Color.FromArgb(230, 240, 255), // Light Blue
+                Padding = new Padding(1),
+                Margin = new Padding(3)
+            };
+
+            FlowLayoutPanel flow = new FlowLayoutPanel { 
+                AutoSize = true, 
+                AutoSizeMode = AutoSizeMode.GrowAndShrink, 
+                FlowDirection = FlowDirection.LeftToRight,
+                Margin = new Padding(0)
+            };
+
+            // Icon based on extension
+            string ext = Path.GetExtension(filePath).ToLower();
+            // string icon = "📄";
+            // if (ext == ".png" || ext == ".jpg" || ext == ".jpeg") icon = "🖼️";
+            
+            Label lblName = new Label { 
+                Text = Path.GetFileName(filePath), 
+                AutoSize = true, 
+                Font = new Font("Segoe UI", 8),
+                Margin = new Padding(3, 3, 0, 3),
+                MaximumSize = new Size(150, 0), // Limit width
+                AutoEllipsis = true
+            };
+            
+            Label btnRemove = new Label { 
+                Text = "✕", 
+                AutoSize = true, 
+                Font = new Font("Segoe UI", 8, FontStyle.Bold),
+                ForeColor = Color.Gray,
+                Cursor = Cursors.Hand,
+                Margin = new Padding(2, 3, 3, 3)
+            };
+            btnRemove.Click += (s, e) => RemoveAttachment(chip, filePath);
+            btnRemove.MouseEnter += (s, e) => btnRemove.ForeColor = Color.Red;
+            btnRemove.MouseLeave += (s, e) => btnRemove.ForeColor = Color.Gray;
+
+            flow.Controls.Add(lblName);
+            flow.Controls.Add(btnRemove);
+            chip.Controls.Add(flow);
+
+            pnlAttachments.Controls.Add(chip);
+        }
+
+        private void RemoveAttachment(Control chip, string filePath)
+        {
+            filePaths.Remove(filePath);
+            pnlAttachments.Controls.Remove(chip);
+            chip.Dispose();
         }
 
         private async void BtnRun_Click(object sender, EventArgs e)
