@@ -43,7 +43,11 @@ namespace ExcelSP2
         // UI Controls
         private Button btnCapture;
         private Button btnResetHeader; // New Reset Button
-        private PictureBox picPreview;
+        private Button btnPreview; // New Preview Button
+        private Image capturedImage; // Store captured image
+        private Form previewPopup; // Popup for hover
+        private PictureBox previewPopupBox; // PictureBox in popup
+        // private PictureBox picPreview; // Removed
         private Label lblSelectionInfo;
         // private Panel pnlDropZone; // Removed
         // private Label lblDropHint; // Removed
@@ -222,13 +226,38 @@ namespace ExcelSP2
             // 1. Selection Section
             panel.Controls.Add(CreateHeader("1. Selection"));
             
+            // Initialize Preview Popup
+            previewPopup = new Form
+            {
+                FormBorderStyle = FormBorderStyle.None,
+                ShowInTaskbar = false,
+                StartPosition = FormStartPosition.Manual,
+                Size = new Size(300, 300),
+                TopMost = true,
+                BackColor = Color.DimGray,
+                Padding = new Padding(1)
+            };
+            previewPopupBox = new PictureBox
+            {
+                Dock = DockStyle.Fill,
+                SizeMode = PictureBoxSizeMode.Zoom,
+                BackColor = Color.White
+            };
+            previewPopup.Controls.Add(previewPopupBox);
+
             FlowLayoutPanel pnlCapture = new FlowLayoutPanel { Width = width, Height = 35, FlowDirection = FlowDirection.LeftToRight, Margin = new Padding(0) };
             
-            btnCapture = new Button { Text = "Capture Selection", Width = 160, Height = 30, BackColor = Color.White, FlatStyle = FlatStyle.Flat, Margin = new Padding(3) };
+            btnCapture = new Button { Text = "Capture", Width = 110, Height = 30, BackColor = Color.White, FlatStyle = FlatStyle.Flat, Margin = new Padding(3) };
             btnCapture.Click += BtnCapture_Click;
             pnlCapture.Controls.Add(btnCapture);
 
-            btnResetHeader = new Button { Text = "Reset", Width = 80, Height = 30, BackColor = Color.LightSalmon, FlatStyle = FlatStyle.Flat, Margin = new Padding(3), Visible = false };
+            btnPreview = new Button { Text = "Preview", Width = 60, Height = 30, BackColor = Color.LightGray, FlatStyle = FlatStyle.Flat, Margin = new Padding(3), Visible = false };
+            btnPreview.Click += BtnPreview_Click;
+            btnPreview.MouseEnter += BtnPreview_MouseEnter;
+            btnPreview.MouseLeave += BtnPreview_MouseLeave;
+            pnlCapture.Controls.Add(btnPreview);
+
+            btnResetHeader = new Button { Text = "Reset", Width = 60, Height = 30, BackColor = Color.LightSalmon, FlatStyle = FlatStyle.Flat, Margin = new Padding(3), Visible = false };
             btnResetHeader.Click += BtnResetHeader_Click;
             pnlCapture.Controls.Add(btnResetHeader);
 
@@ -236,9 +265,6 @@ namespace ExcelSP2
 
             lblSelectionInfo = new Label { Text = "No selection captured.", Width = width, ForeColor = Color.Gray, AutoSize = true, Margin = new Padding(3, 5, 3, 5) };
             panel.Controls.Add(lblSelectionInfo);
-
-            picPreview = new PictureBox { Width = width, Height = 100, SizeMode = PictureBoxSizeMode.Zoom, BorderStyle = BorderStyle.FixedSingle, Visible = false, Margin = new Padding(3, 5, 3, 5) };
-            panel.Controls.Add(picPreview);
 
             // 2. Context Section
             panel.Controls.Add(CreateHeader("2. Context Materials"));
@@ -537,22 +563,14 @@ namespace ExcelSP2
                 range.CopyPicture(Excel.XlPictureAppearance.xlScreen, Excel.XlCopyPictureFormat.xlBitmap);
                 if (Clipboard.ContainsImage())
                 {
-                    Image img = Clipboard.GetImage();
-                    picPreview.Image = img;
-                    picPreview.Visible = true;
-                    
-                    // Adjust layout if needed, but for now we just show it in the reserved space or let it overlay?
-                    // Since we didn't reserve space in y, let's just show it. 
-                    // In a real app, we'd use FlowLayoutPanel.
-                    // For this fix, let's just make sure it doesn't cover other things.
-                    // Actually, let's put it in a popup or just leave it hidden for now to avoid layout issues, 
-                    // OR insert it dynamically.
-                    // Let's just show a message "Image Captured" to keep UI clean.
+                    if (capturedImage != null) capturedImage.Dispose();
+                    capturedImage = Clipboard.GetImage();
+                    btnPreview.Visible = true;
                     lblSelectionInfo.Text += " [Image Captured]";
                     
                     using (MemoryStream ms = new MemoryStream())
                     {
-                        img.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                        capturedImage.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
                         byte[] imageBytes = ms.ToArray();
                         capturedImageBase64 = Convert.ToBase64String(imageBytes);
                     }
@@ -562,6 +580,32 @@ namespace ExcelSP2
             {
                 MessageBox.Show("Error capturing: " + ex.Message);
             }
+        }
+
+        private void BtnPreview_Click(object sender, EventArgs e)
+        {
+            if (capturedImage == null) return;
+            string tempPath = Path.Combine(Path.GetTempPath(), "excel_plugin_preview.png");
+            capturedImage.Save(tempPath, System.Drawing.Imaging.ImageFormat.Png);
+            System.Diagnostics.Process.Start(tempPath);
+        }
+
+        private void BtnPreview_MouseEnter(object sender, EventArgs e)
+        {
+            if (capturedImage == null) return;
+            
+            previewPopupBox.Image = capturedImage;
+            
+            // Calculate position: Left of the button
+            Point pt = btnPreview.PointToScreen(Point.Empty);
+            previewPopup.Location = new Point(pt.X - previewPopup.Width - 5, pt.Y);
+            
+            previewPopup.Show();
+        }
+
+        private void BtnPreview_MouseLeave(object sender, EventArgs e)
+        {
+            previewPopup.Hide();
         }
 
         private void LstFiles_DragEnter(object sender, DragEventArgs e)
