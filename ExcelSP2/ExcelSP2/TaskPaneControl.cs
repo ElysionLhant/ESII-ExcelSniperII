@@ -44,6 +44,7 @@ namespace ExcelSP2
         private Button btnCapture;
         private Button btnResetHeader; // New Reset Button
         private Button btnPreview; // New Preview Button
+        private Button btnClearCapture; // New Clear Button
         private Image capturedImage; // Store captured image
         private Form previewPopup; // Popup for hover
         private PictureBox previewPopupBox; // PictureBox in popup
@@ -245,19 +246,27 @@ namespace ExcelSP2
             };
             previewPopup.Controls.Add(previewPopupBox);
 
-            FlowLayoutPanel pnlCapture = new FlowLayoutPanel { Width = width, Height = 35, FlowDirection = FlowDirection.LeftToRight, Margin = new Padding(0) };
+            FlowLayoutPanel pnlCapture = new FlowLayoutPanel { Width = width + 40, Height = 35, FlowDirection = FlowDirection.LeftToRight, Margin = new Padding(0) };
             
-            btnCapture = new Button { Text = "Capture", Width = 110, Height = 30, BackColor = Color.White, FlatStyle = FlatStyle.Flat, Margin = new Padding(3) };
+            btnCapture = new Button { Text = "Capture", Width = 75, Height = 30, BackColor = Color.White, FlatStyle = FlatStyle.Flat, Margin = new Padding(3) };
             btnCapture.Click += BtnCapture_Click;
             pnlCapture.Controls.Add(btnCapture);
 
-            btnPreview = new Button { Text = "Preview", Width = 60, Height = 30, BackColor = Color.LightGray, FlatStyle = FlatStyle.Flat, Margin = new Padding(3), Visible = false };
+            btnPreview = new Button { Text = "Preview", Width = 75, Height = 30, BackColor = Color.LightGray, FlatStyle = FlatStyle.Flat, Margin = new Padding(3), Visible = false };
             btnPreview.Click += BtnPreview_Click;
             btnPreview.MouseEnter += BtnPreview_MouseEnter;
             btnPreview.MouseLeave += BtnPreview_MouseLeave;
             pnlCapture.Controls.Add(btnPreview);
 
-            btnResetHeader = new Button { Text = "Reset", Width = 60, Height = 30, BackColor = Color.LightSalmon, FlatStyle = FlatStyle.Flat, Margin = new Padding(3), Visible = false };
+            btnClearCapture = new Button { Text = "✕", Width = 30, Height = 30, BackColor = Color.WhiteSmoke, FlatStyle = FlatStyle.Flat, Margin = new Padding(3), Visible = false, Font = new Font("Segoe UI", 9) };
+            btnClearCapture.FlatAppearance.BorderSize = 0;
+            btnClearCapture.Click += BtnClearCapture_Click;
+            // Add tooltip
+            ToolTip tt = new ToolTip();
+            tt.SetToolTip(btnClearCapture, "Clear Selection");
+            pnlCapture.Controls.Add(btnClearCapture);
+
+            btnResetHeader = new Button { Text = "Reset", Width = 55, Height = 30, BackColor = Color.LightSalmon, FlatStyle = FlatStyle.Flat, Margin = new Padding(3), Visible = false };
             btnResetHeader.Click += BtnResetHeader_Click;
             pnlCapture.Controls.Add(btnResetHeader);
 
@@ -566,6 +575,7 @@ namespace ExcelSP2
                     if (capturedImage != null) capturedImage.Dispose();
                     capturedImage = Clipboard.GetImage();
                     btnPreview.Visible = true;
+                    btnClearCapture.Visible = true;
                     lblSelectionInfo.Text += " [Image Captured]";
                     
                     using (MemoryStream ms = new MemoryStream())
@@ -927,6 +937,24 @@ namespace ExcelSP2
                 lblSelectionInfo.Text = lblSelectionInfo.Text.Replace(" [Header Cached]", "");
             }
             MessageBox.Show("Header cache cleared.");
+        }
+
+        private void BtnClearCapture_Click(object sender, EventArgs e)
+        {
+            if (capturedImage != null)
+            {
+                capturedImage.Dispose();
+                capturedImage = null;
+            }
+            capturedImageBase64 = null;
+            capturedAddress = null;
+            
+            btnPreview.Visible = false;
+            btnClearCapture.Visible = false;
+            lblSelectionInfo.Text = "No selection captured.";
+            
+            // Also hide preview popup if it's showing
+            if (previewPopup != null) previewPopup.Hide();
         }
 
         private string GetColumnRangeKey(Excel.Range range)
