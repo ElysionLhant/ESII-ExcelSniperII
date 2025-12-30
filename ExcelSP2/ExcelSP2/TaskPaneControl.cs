@@ -32,10 +32,17 @@ namespace ExcelSP2
         public string Model { get; set; }
     }
 
+    public class HeaderInfo
+    {
+        public string HeaderContent { get; set; }
+        public int HeaderRows { get; set; }
+    }
+
     public partial class TaskPaneControl : UserControl
     {
         // UI Controls
         private Button btnCapture;
+        private Button btnResetHeader; // New Reset Button
         private PictureBox picPreview;
         private Label lblSelectionInfo;
         // private Panel pnlDropZone; // Removed
@@ -67,6 +74,8 @@ namespace ExcelSP2
         // State
         private string capturedAddress;
         private string capturedImageBase64;
+        private HeaderInfo cachedHeaderInfo; // Cache for header
+        private string cachedColumnRange; // Cache for column range
         private List<string> filePaths = new List<string>();
         private List<PromptPreset> promptPresets;
         private List<MacroPreset> macroPresets;
@@ -213,9 +222,17 @@ namespace ExcelSP2
             // 1. Selection Section
             panel.Controls.Add(CreateHeader("1. Selection"));
             
-            btnCapture = new Button { Text = "Capture Selection", Width = width, Height = 30, BackColor = Color.White, FlatStyle = FlatStyle.Flat, Margin = new Padding(3, 3, 3, 3) };
+            FlowLayoutPanel pnlCapture = new FlowLayoutPanel { Width = width, Height = 35, FlowDirection = FlowDirection.LeftToRight, Margin = new Padding(0) };
+            
+            btnCapture = new Button { Text = "Capture Selection", Width = 160, Height = 30, BackColor = Color.White, FlatStyle = FlatStyle.Flat, Margin = new Padding(3) };
             btnCapture.Click += BtnCapture_Click;
-            panel.Controls.Add(btnCapture);
+            pnlCapture.Controls.Add(btnCapture);
+
+            btnResetHeader = new Button { Text = "Reset", Width = 80, Height = 30, BackColor = Color.LightSalmon, FlatStyle = FlatStyle.Flat, Margin = new Padding(3), Visible = false };
+            btnResetHeader.Click += BtnResetHeader_Click;
+            pnlCapture.Controls.Add(btnResetHeader);
+
+            panel.Controls.Add(pnlCapture);
 
             lblSelectionInfo = new Label { Text = "No selection captured.", Width = width, ForeColor = Color.Gray, AutoSize = true, Margin = new Padding(3, 5, 3, 5) };
             panel.Controls.Add(lblSelectionInfo);
@@ -504,6 +521,18 @@ namespace ExcelSP2
                 capturedAddress = range.Address[false, false];
                 lblSelectionInfo.Text = $"Selected: {capturedAddress} ({range.Rows.Count}R x {range.Columns.Count}C)";
 
+                // Check Cache
+                string currentColKey = GetColumnRangeKey(range);
+                if (cachedHeaderInfo != null && cachedColumnRange == currentColKey)
+                {
+                    lblSelectionInfo.Text += " [Header Cached]";
+                    btnResetHeader.Visible = true;
+                }
+                else
+                {
+                    btnResetHeader.Visible = false;
+                }
+
                 // Capture Image
                 range.CopyPicture(Excel.XlPictureAppearance.xlScreen, Excel.XlCopyPictureFormat.xlBitmap);
                 if (Clipboard.ContainsImage())
@@ -579,29 +608,102 @@ namespace ExcelSP2
 
         private async void BtnRun_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrEmpty(txtApiKey.Text))
+            // Capture UI values on UI thread
+            string apiKey = txtApiKey.Text;
+            string apiUrl = txtApiUrl.Text;
+            string model = txtModel.Text;
+            string prompt = txtPrompt.Text;
+            string manualContext = txtContext.Text;
+
+            if (string.IsNullOrEmpty(apiKey))
             {
                 MessageBox.Show("Please set API Key in Settings.");
                 pnlSettings.Visible = true;
                 return;
             }
 
+            if (string.IsNullOrEmpty(capturedAddress) || string.IsNullOrEmpty(capturedImageBase64))
+            {
+                MessageBox.Show("Please capture a selection first.");
+                return;
+            }
+
             btnRun.Enabled = false;
-            lblStatus.Text = "Reading files...";
+            lblStatus.Text = "Processing...";
 
             try
             {
                 // Fix SSL/TLS error: Enable TLS 1.2 (Required for OpenAI/Modern APIs)
                 System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
 
-                // 1. Prepare Context
+                bool isNewHeaderDetection = false;
+
+                // Step 1: Header Detection
+                if (cachedHeaderInfo == null)
+                {
+                    isNewHeaderDetection = true;
+                    lblStatus.Text = "Detecting Header...";
+                    cachedHeaderInfo = await DetectHeader(capturedImageBase64, apiUrl, apiKey, model);
+                    
+                    // Update Cache Key
+                    Excel.Range rangeForCache = Globals.ThisAddIn.Application.Range[capturedAddress];
+                    cachedColumnRange = GetColumnRangeKey(rangeForCache);
+                    
+                    // Update UI to show cached status
+                    this.Invoke(new Action(() => {
+                        if (!lblSelectionInfo.Text.Contains(" [Header Cached]"))
+                        {
+                            lblSelectionInfo.Text += " [Header Cached]";
+                            btnResetHeader.Visible = true;
+                        }
+                    }));
+                }
+
+                // Step 2: Adjust Selection Range
+                Excel.Worksheet sheet = Globals.ThisAddIn.Application.ActiveSheet;
+                Excel.Range originalRange = sheet.Range[capturedAddress];
+                
+                int startRow = originalRange.Row;
+                
+                // Only apply header offset if this is a fresh detection (Case A: Initial Capture)
+                // If using cached header (Case B: Continuous Input), we write to the exact selected area
+                if (isNewHeaderDetection)
+                {
+                    startRow += cachedHeaderInfo.HeaderRows;
+                }
+
+                int endRow = originalRange.Row + originalRange.Rows.Count - 1;
+                int startCol = originalRange.Column;
+                int endCol = originalRange.Column + originalRange.Columns.Count - 1;
+
+                // Ensure we have a valid range
+                if (startRow > endRow)
+                {
+                     // If header takes up all rows, start writing from next row
+                     startRow = endRow + 1; 
+                     endRow = startRow; // Initial write range is 1 row
+                }
+
+                Excel.Range writeRange = sheet.Range[sheet.Cells[startRow, startCol], sheet.Cells[endRow, endCol]];
+
+                // Step 3: Prepare Data (Clear Value, Keep Format)
+                this.Invoke(new Action(() => {
+                    writeRange.ClearContents(); // Clears value/formula but keeps format
+                }));
+
+                // Prepare Context for Execution LLM
                 StringBuilder contextBuilder = new StringBuilder();
+                contextBuilder.AppendLine($"--- Header Information ---");
+                contextBuilder.AppendLine($"Header Content: {cachedHeaderInfo.HeaderContent}");
+                contextBuilder.AppendLine("(NOTE: This header is provided for context only. Do NOT include it in the output data.)");
+                contextBuilder.AppendLine($"Target Write Start Row: {startRow}");
+                
                 List<string> additionalImages = new List<string>();
 
-                if (!string.IsNullOrWhiteSpace(txtContext.Text))
+                if (!string.IsNullOrWhiteSpace(manualContext))
                 {
                     contextBuilder.AppendLine("--- Manual Context ---");
-                    contextBuilder.AppendLine(txtContext.Text);
+                    contextBuilder.AppendLine(manualContext);
                     contextBuilder.AppendLine();
                 }
 
@@ -634,10 +736,11 @@ namespace ExcelSP2
                     }
                 }
 
-                // 2. Build Payload
+                // Build Payload
                 var userContent = new List<object>();
-                userContent.Add(new { type = "text", text = txtPrompt.Text + "\n\n" + contextBuilder.ToString() });
+                userContent.Add(new { type = "text", text = prompt + "\n\n" + contextBuilder.ToString() });
 
+                // We send the original captured image as reference, plus any additional images
                 if (!string.IsNullOrEmpty(capturedImageBase64))
                 {
                     userContent.Add(new {
@@ -656,37 +759,37 @@ namespace ExcelSP2
 
                 var messages = new List<object>
                 {
-                    new { role = "system", content = "You are an Excel assistant. Return ONLY a JSON 2D array." },
+                    new { role = "system", content = "You are an Excel assistant. Return ONLY a JSON 2D array of values to fill the table. IMPORTANT: Do NOT include the header row in your output. Only return the data rows." },
                     new { role = "user", content = userContent }
                 };
 
                 var requestBody = new
                 {
-                    model = txtModel.Text,
+                    model = model,
                     messages = messages,
-                    max_tokens = 2000,
+                    max_tokens = 16384,
                     temperature = 0.1
                 };
 
-                lblStatus.Text = "Sending to LLM...";
+                this.Invoke(new Action(() => lblStatus.Text = "Generating Content..."));
 
-                // 3. Call API
+                // Call API
                 using (HttpClient client = new HttpClient())
                 {
                     client.Timeout = TimeSpan.FromMinutes(2);
-                    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {txtApiKey.Text}");
+                    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
 
                     var serializer = new JavaScriptSerializer();
                     string json = serializer.Serialize(requestBody);
                     var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                    var response = await client.PostAsync($"{txtApiUrl.Text}/chat/completions", content);
+                    var response = await client.PostAsync($"{apiUrl}/chat/completions", content);
                     string responseString = await response.Content.ReadAsStringAsync();
 
                     if (!response.IsSuccessStatusCode)
                         throw new Exception($"API Error: {response.StatusCode}\n{responseString}");
 
-                    // 4. Parse Response
+                    // Parse Response
                     dynamic result = serializer.Deserialize<dynamic>(responseString);
                     string llmContent = result["choices"][0]["message"]["content"];
                     
@@ -695,10 +798,10 @@ namespace ExcelSP2
                     
                     var rows = serializer.Deserialize<dynamic>(llmContent);
 
-                    // 5. Write to Excel
+                    // Step 5 & 6: Write to Excel with Dynamic Rows
                     this.Invoke(new Action(() => {
                         lblStatus.Text = "Writing to Excel...";
-                        WriteToExcel(rows);
+                        WriteToExcelWithDynamicRows(rows, writeRange);
                         lblStatus.Text = "Done!";
                     }));
                 }
@@ -716,54 +819,121 @@ namespace ExcelSP2
             }
         }
 
-        private void WriteToExcel(dynamic rows)
+        private void WriteToExcelWithDynamicRows(dynamic rows, Excel.Range targetRange)
         {
-            int rowCount = 0;
-            int colCount = 0;
+            int dataRowCount = 0;
+            int dataColCount = 0;
 
-            if (rows is Array) rowCount = ((Array)rows).Length;
-            else if (rows is System.Collections.IList) rowCount = ((System.Collections.IList)rows).Count;
+            if (rows is Array) dataRowCount = ((Array)rows).Length;
+            else if (rows is System.Collections.IList) dataRowCount = ((System.Collections.IList)rows).Count;
 
-            if (rowCount == 0) return;
+            if (dataRowCount == 0) return;
 
             var firstRow = (rows is Array) ? ((Array)rows).GetValue(0) : ((System.Collections.IList)rows)[0];
-            if (firstRow is Array) colCount = ((Array)firstRow).Length;
-            else if (firstRow is System.Collections.IList) colCount = ((System.Collections.IList)firstRow).Count;
+            if (firstRow is Array) dataColCount = ((Array)firstRow).Length;
+            else if (firstRow is System.Collections.IList) dataColCount = ((System.Collections.IList)firstRow).Count;
 
-            object[,] data = new object[rowCount, colCount];
-            for (int i = 0; i < rowCount; i++)
+            object[,] data = new object[dataRowCount, dataColCount];
+            for (int i = 0; i < dataRowCount; i++)
             {
                 var r = (rows is Array) ? ((Array)rows).GetValue(i) : ((System.Collections.IList)rows)[i];
-                for (int j = 0; j < colCount; j++)
+                for (int j = 0; j < dataColCount; j++)
                 {
                     var val = (r is Array) ? ((Array)r).GetValue(j) : ((System.Collections.IList)r)[j];
                     data[i, j] = val;
                 }
             }
 
-            Excel.Worksheet sheet = Globals.ThisAddIn.Application.ActiveSheet;
-            Excel.Range startRange;
-
-            if (string.IsNullOrEmpty(capturedAddress))
+            // Check if we need to insert rows
+            int availableRows = targetRange.Rows.Count;
+            if (dataRowCount > availableRows)
             {
-                startRange = Globals.ThisAddIn.Application.ActiveCell;
+                int rowsToAdd = dataRowCount - availableRows;
+                
+                // Insert rows starting from the last row of the target range
+                // We use the last row as the anchor to insert below/at
+                Excel.Range lastRow = targetRange.Rows[targetRange.Rows.Count];
+                
+                // Resize to cover the number of rows we need to add
+                Excel.Range insertRange = lastRow.Resize[rowsToAdd, targetRange.Columns.Count];
+                
+                // Insert shifting down, copying format from above (default usually works well for tables)
+                insertRange.Insert(Excel.XlInsertShiftDirection.xlShiftDown, Excel.XlInsertFormatOrigin.xlFormatFromLeftOrAbove);
+                
+                // Note: After insertion, the targetRange variable might not automatically expand in the way we want
+                // So we redefine the target range to start from the same top-left but extend to new height
+                Excel.Worksheet sheet = targetRange.Worksheet;
+                targetRange = sheet.Range[targetRange.Cells[1, 1], targetRange.Cells[dataRowCount, targetRange.Columns.Count]];
             }
-            else
+
+            // Write data
+            // We write to the top-left of the target range, resizing to match data dimensions
+            Excel.Range finalWriteRange = targetRange.Cells[1, 1].Resize[dataRowCount, dataColCount];
+            finalWriteRange.Value2 = data;
+            finalWriteRange.Select();
+        }
+
+        private void BtnResetHeader_Click(object sender, EventArgs e)
+        {
+            cachedHeaderInfo = null;
+            cachedColumnRange = null;
+            btnResetHeader.Visible = false;
+            if (lblSelectionInfo.Text.Contains(" [Header Cached]"))
             {
-                try
-                {
-                    startRange = sheet.Range[capturedAddress].Cells[1, 1];
-                }
-                catch
-                {
-                    startRange = Globals.ThisAddIn.Application.ActiveCell;
-                }
+                lblSelectionInfo.Text = lblSelectionInfo.Text.Replace(" [Header Cached]", "");
             }
+            MessageBox.Show("Header cache cleared.");
+        }
 
-            Excel.Range targetRange = startRange.Resize[rowCount, colCount];
+        private string GetColumnRangeKey(Excel.Range range)
+        {
+            // Returns a key representing the columns, e.g., "1-4" for Columns A to D
+            int startCol = range.Column;
+            int endCol = range.Column + range.Columns.Count - 1;
+            return $"{startCol}-{endCol}";
+        }
 
-            targetRange.Value2 = data;
-            targetRange.Select();
+        private async Task<HeaderInfo> DetectHeader(string imageBase64, string apiUrl, string apiKey, string model)
+        {
+            // Prompt for header detection
+            var messages = new List<object>
+            {
+                new { role = "system", content = "You are an expert at analyzing Excel tables. Your task is to identify the header rows in the provided image of a table." },
+                new { role = "user", content = new List<object> {
+                    new { type = "text", text = "Analyze this image. Identify the header content and the number of rows the header occupies. Return a JSON object with keys: 'HeaderContent' (string, the text of the headers) and 'HeaderRows' (integer, the count of header rows). Example: { \"HeaderContent\": \"Name | Age | Date\", \"HeaderRows\": 1 }" },
+                    new { type = "image_url", image_url = new { url = $"data:image/png;base64,{imageBase64}" } }
+                }}
+            };
+
+            var requestBody = new
+            {
+                model = model, // Use the configured model
+                messages = messages,
+                max_tokens = 4096,
+                temperature = 0.0,
+                response_format = new { type = "json_object" } // Force JSON
+            };
+
+            using (HttpClient client = new HttpClient())
+            {
+                client.Timeout = TimeSpan.FromMinutes(1);
+                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
+
+                var serializer = new JavaScriptSerializer();
+                string json = serializer.Serialize(requestBody);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await client.PostAsync($"{apiUrl}/chat/completions", content);
+                string responseString = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                    throw new Exception($"Header Detection Failed: {response.StatusCode}\n{responseString}");
+
+                dynamic result = serializer.Deserialize<dynamic>(responseString);
+                string llmContent = result["choices"][0]["message"]["content"];
+                
+                return serializer.Deserialize<HeaderInfo>(llmContent);
+            }
         }
     }
 }
