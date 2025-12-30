@@ -1,4 +1,4 @@
-﻿# Excel AI 智能助手 (VSTO 版)
+﻿# Excel SNIPERII (VSTO 版)
 
 这是一个基于 .NET Framework 4.7.2 开发的 Excel VSTO 加载项（Add-in），深度集成了 LLM（OpenAI、火山引擎等），旨在通过 AI 辅助自动化 Excel 数据处理任务。
 
