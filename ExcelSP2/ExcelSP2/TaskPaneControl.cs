@@ -838,6 +838,9 @@ namespace ExcelSP2
             string prompt = txtPrompt.Text;
             string manualContext = txtContext.Text;
 
+            // Fix SSL/TLS error: Enable TLS 1.2 (Required for OpenAI/Modern APIs)
+            System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+
             if (string.IsNullOrEmpty(apiKey))
             {
                 MessageBox.Show("Please set API Key in Settings.");
@@ -859,8 +862,11 @@ namespace ExcelSP2
                 }
                 finally
                 {
-                    btnRun.Enabled = true;
-                    lblStatus.Text = "Ready";
+                    this.Invoke(new Action(() =>
+                    {
+                        btnRun.Enabled = true;
+                        lblStatus.Text = "Ready";
+                    }));
                 }
                 return;
             }
@@ -876,9 +882,6 @@ namespace ExcelSP2
 
             try
             {
-                // Fix SSL/TLS error: Enable TLS 1.2 (Required for OpenAI/Modern APIs)
-                System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
-
                 bool isNewHeaderDetection = false;
 
                 // Step 1: Header Detection
