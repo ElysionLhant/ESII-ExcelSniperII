@@ -76,6 +76,7 @@ namespace ExcelSP2
         private TextBox txtApiKey;
         private TextBox txtModel;
         private Label lblStatus;
+        private ToggleSwitch toggleMode; // New Toggle
 
         // State
         private string capturedAddress;
@@ -355,7 +356,26 @@ namespace ExcelSP2
             panel.Controls.Add(lblHint);
 
             // 3. Prompt Section
-            panel.Controls.Add(CreateHeader("3. Prompt"));
+            // Header with Toggle
+            FlowLayoutPanel pnlPromptHeader = new FlowLayoutPanel { Width = width, Height = 30, FlowDirection = FlowDirection.LeftToRight, Margin = new Padding(0, 15, 0, 0) };
+            Label lblPromptTitle = new Label { Text = "3. Prompt", AutoSize = true, Font = new Font(this.Font, FontStyle.Bold), Margin = new Padding(3, 5, 10, 0) };
+            
+            toggleMode = new ToggleSwitch { 
+                Width = 90, 
+                Height = 24, 
+                Text = "", 
+                Checked = false, 
+                Cursor = Cursors.Hand,
+                OffText = "Data Write",
+                OnText = "Data Op",
+                Font = new Font("Segoe UI", 8, FontStyle.Bold)
+            };
+            ToolTip ttMode = new ToolTip();
+            ttMode.SetToolTip(toggleMode, "Switch between Content Generation and Data Operation");
+            
+            pnlPromptHeader.Controls.Add(lblPromptTitle);
+            pnlPromptHeader.Controls.Add(toggleMode);
+            panel.Controls.Add(pnlPromptHeader);
 
             // Prompt Management Row (Need a sub-panel for horizontal layout)
             FlowLayoutPanel pnlPrompts = new FlowLayoutPanel { Width = width, Height = 30, FlowDirection = FlowDirection.LeftToRight, Margin = new Padding(0) };
@@ -825,6 +845,26 @@ namespace ExcelSP2
                 return;
             }
 
+            // Check Mode
+            if (toggleMode.Checked)
+            {
+                btnRun.Enabled = false;
+                try
+                {
+                    await RunDataMode(apiKey, apiUrl, model, prompt, manualContext);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error: " + ex.Message);
+                }
+                finally
+                {
+                    btnRun.Enabled = true;
+                    lblStatus.Text = "Ready";
+                }
+                return;
+            }
+
             if (string.IsNullOrEmpty(capturedAddress) || string.IsNullOrEmpty(capturedImageBase64))
             {
                 MessageBox.Show("Please capture a selection first.");
@@ -1154,6 +1194,235 @@ namespace ExcelSP2
                 string llmContent = result["choices"][0]["message"]["content"];
                 
                 return serializer.Deserialize<HeaderInfo>(llmContent);
+            }
+        }
+
+        private async Task RunDataMode(string apiKey, string apiUrl, string model, string prompt, string manualContext)
+        {
+            // 1. Get Data from Selection
+            Excel.Range range = Globals.ThisAddIn.Application.Selection as Excel.Range;
+            if (range == null)
+            {
+                MessageBox.Show("Please select a range first.");
+                return;
+            }
+
+            string csvData = GetRangeCsv(range);
+            
+            // 2. Build Context
+            StringBuilder contextBuilder = new StringBuilder();
+            contextBuilder.AppendLine("--- Selected Data (CSV) ---");
+            contextBuilder.AppendLine(csvData);
+            
+            if (!string.IsNullOrWhiteSpace(manualContext))
+            {
+                contextBuilder.AppendLine("--- Manual Context ---");
+                contextBuilder.AppendLine(manualContext);
+            }
+
+            foreach (string file in filePaths)
+            {
+                if (File.Exists(file))
+                {
+                    string ext = Path.GetExtension(file).ToLower();
+                    if (ext == ".txt" || ext == ".csv" || ext == ".json" || ext == ".md")
+                    {
+                        contextBuilder.AppendLine($"--- File: {Path.GetFileName(file)} ---");
+                        contextBuilder.AppendLine(File.ReadAllText(file));
+                    }
+                }
+            }
+
+            // 3. Prepare Prompt for VBA Generation
+            var messages = new List<object>
+            {
+                new { role = "system", content = "You are an expert Excel VBA developer. Your task is to write a VBA Sub to perform the user's requested action on the selected data. \n" +
+                                                 "RULES:\n" +
+                                                 "1. The code MUST be a valid VBA Sub named 'AI_Generated_Action'.\n" +
+                                                 "2. The code should operate on the currently selected range (Selection) or the active sheet as appropriate.\n" +
+                                                 "3. Return ONLY the VBA code. Do not include markdown formatting like ```vba ... ```. Just the code.\n" +
+                                                 "4. Do not use MsgBox unless explicitly asked." },
+                new { role = "user", content = prompt + "\n\n" + contextBuilder.ToString() }
+            };
+
+            var requestBody = new
+            {
+                model = model,
+                messages = messages,
+                max_tokens = 4096,
+                temperature = 0.1
+            };
+
+            this.Invoke(new Action(() => lblStatus.Text = "Generating VBA..."));
+
+            // 4. Call API
+            using (HttpClient client = new HttpClient())
+            {
+                client.Timeout = TimeSpan.FromMinutes(2);
+                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
+
+                var serializer = new JavaScriptSerializer();
+                string json = serializer.Serialize(requestBody);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await client.PostAsync($"{apiUrl}/chat/completions", content);
+                string responseString = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                    throw new Exception($"API Error: {response.StatusCode}\n{responseString}");
+
+                dynamic result = serializer.Deserialize<dynamic>(responseString);
+                string vbaCode = result["choices"][0]["message"]["content"];
+                
+                // Clean code
+                vbaCode = vbaCode.Replace("```vba", "").Replace("```", "").Trim();
+
+                // 5. Run Macro
+                this.Invoke(new Action(() => lblStatus.Text = "Running Macro..."));
+                RunGeneratedMacro(vbaCode);
+                this.Invoke(new Action(() => lblStatus.Text = "Done (Data Mode)"));
+            }
+        }
+
+        private string GetRangeCsv(Excel.Range range)
+        {
+            StringBuilder sb = new StringBuilder();
+            object[,] values = range.Value2 as object[,];
+            
+            if (values == null) return "";
+
+            int rows = values.GetLength(0);
+            int cols = values.GetLength(1);
+
+            for (int i = 1; i <= rows; i++)
+            {
+                for (int j = 1; j <= cols; j++)
+                {
+                    object val = values[i, j];
+                    string strVal = val != null ? val.ToString() : "";
+                    // Escape CSV
+                    if (strVal.Contains(",") || strVal.Contains("\"") || strVal.Contains("\n"))
+                    {
+                        strVal = "\"" + strVal.Replace("\"", "\"\"") + "\"";
+                    }
+                    sb.Append(strVal);
+                    if (j < cols) sb.Append(",");
+                }
+                sb.AppendLine();
+            }
+            return sb.ToString();
+        }
+
+        private void RunGeneratedMacro(string code)
+        {
+            try
+            {
+                Excel.Application app = Globals.ThisAddIn.Application;
+                dynamic vbProj = app.VBE.ActiveVBProject;
+                
+                // Check for existing module
+                dynamic targetComponent = null;
+                foreach (dynamic comp in vbProj.VBComponents)
+                {
+                    if (comp.Name == "Sniper_Temp_Runner")
+                    {
+                        targetComponent = comp;
+                        break;
+                    }
+                }
+
+                // Plan B: If exists, we overwrite (by removing and recreating, or clearing)
+                // Simplest is remove and recreate to ensure clean slate
+                if (targetComponent != null)
+                {
+                    vbProj.VBComponents.Remove(targetComponent);
+                }
+
+                // Create new module
+                targetComponent = vbProj.VBComponents.Add(1); // vbext_ct_StdModule
+                targetComponent.Name = "Sniper_Temp_Runner";
+
+                // Inject Code
+                targetComponent.CodeModule.AddFromString(code);
+
+                // Run
+                app.Run("Sniper_Temp_Runner.AI_Generated_Action");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error executing macro: " + ex.Message + "\n\nEnsure 'Trust access to the VBA project object model' is enabled.");
+            }
+        }
+    }
+
+    public class ToggleSwitch : CheckBox
+    {
+        public string OffText { get; set; } = "OFF";
+        public string OnText { get; set; } = "ON";
+
+        public ToggleSwitch()
+        {
+            this.SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.DoubleBuffer, true);
+            this.Padding = new Padding(6);
+        }
+        protected override void OnPaint(PaintEventArgs pevent)
+        {
+            this.OnPaintBackground(pevent);
+            pevent.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            pevent.Graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+
+            // Add 1px margin to avoid clipping the border
+            int margin = 1;
+            int h = this.Height - (margin * 2);
+            
+            using (System.Drawing.Drawing2D.GraphicsPath path = new System.Drawing.Drawing2D.GraphicsPath())
+            {
+                // Left Arc
+                path.AddArc(margin, margin, h, h, 90, 180);
+                // Right Arc
+                path.AddArc(this.Width - h - margin, margin, h, h, -90, 180);
+                path.CloseFigure();
+                
+                Color backColor = this.Checked ? Color.Orange : Color.LightGray;
+                pevent.Graphics.FillPath(new SolidBrush(backColor), path);
+                pevent.Graphics.DrawPath(Pens.Gray, path);
+                
+                int toggleSize = h - 4;
+                // Adjust toggle position based on new dimensions
+                int togglePos = this.Checked ? (this.Width - margin - toggleSize - 2) : (margin + 2);
+                
+                // Draw Text
+                string textToDraw = this.Checked ? OnText : OffText;
+                
+                // Calculate text position dynamically to ensure centering in the empty space
+                float textAreaX;
+                float textAreaWidth;
+
+                if (this.Checked)
+                {
+                    // Knob is on the right, text on the left
+                    textAreaX = margin;
+                    textAreaWidth = togglePos - margin;
+                }
+                else
+                {
+                    // Knob is on the left, text on the right
+                    textAreaX = togglePos + toggleSize;
+                    textAreaWidth = this.Width - margin - textAreaX;
+                }
+                
+                // Add a small Y offset (1px) to visually center the text better (fix "floating up" issue)
+                RectangleF textRect = new RectangleF(textAreaX, margin + 1, textAreaWidth, h);
+                
+                using (StringFormat sf = new StringFormat())
+                {
+                    sf.Alignment = StringAlignment.Center;
+                    sf.LineAlignment = StringAlignment.Center;
+                    pevent.Graphics.DrawString(textToDraw, this.Font, Brushes.White, textRect, sf);
+                }
+
+                // Draw Knob
+                pevent.Graphics.FillEllipse(Brushes.White, togglePos, margin + 2, toggleSize, toggleSize);
             }
         }
     }
