@@ -90,35 +90,47 @@ namespace ExcelSP2
             else rbSimple.IsChecked = true;
 
             // Simple
-            SetComboValue(cmbSimpleProvider, Settings.Model?.Contains("gpt") == true ? "OpenAI" : "Ollama"); // Heuristic
+            string simpleProvider = Settings.Provider;
+            if (string.IsNullOrEmpty(simpleProvider))
+            {
+                // Heuristic for legacy settings
+                if (Settings.ApiUrl?.Contains("localhost:11434") == true) simpleProvider = "Ollama";
+                else if (Settings.ApiUrl?.Contains("localhost:1234") == true) simpleProvider = "LM Studio";
+                else simpleProvider = "Custom (OpenAI Compatible)";
+            }
+            // Handle legacy "OpenAI" or "Custom" saved values
+            if (simpleProvider == "OpenAI" || simpleProvider == "Custom") simpleProvider = "Custom (OpenAI Compatible)";
+            
+            SetComboValue(cmbSimpleProvider, simpleProvider);
+            
             txtSimpleApiUrl.Text = Settings.ApiUrl;
             txtSimpleApiKey.Text = Settings.ApiKey;
-            txtSimpleModel.Text = Settings.Model;
+            cmbSimpleModel.Text = Settings.Model;
 
             // Advanced
             // Header
             SetComboValue(cmbHeaderProvider, Settings.HeaderDetectionLLM.Provider);
             txtHeaderApiUrl.Text = Settings.HeaderDetectionLLM.ApiUrl;
             txtHeaderApiKey.Text = Settings.HeaderDetectionLLM.ApiKey;
-            txtHeaderModel.Text = Settings.HeaderDetectionLLM.Model;
+            cmbHeaderModel.Text = Settings.HeaderDetectionLLM.Model;
 
             // Write
             SetComboValue(cmbWriteProvider, Settings.DataWriteLLM.Provider);
             txtWriteApiUrl.Text = Settings.DataWriteLLM.ApiUrl;
             txtWriteApiKey.Text = Settings.DataWriteLLM.ApiKey;
-            txtWriteModel.Text = Settings.DataWriteLLM.Model;
+            cmbWriteModel.Text = Settings.DataWriteLLM.Model;
 
             // Op
             SetComboValue(cmbOpProvider, Settings.DataOpLLM.Provider);
             txtOpApiUrl.Text = Settings.DataOpLLM.ApiUrl;
             txtOpApiKey.Text = Settings.DataOpLLM.ApiKey;
-            txtOpModel.Text = Settings.DataOpLLM.Model;
+            cmbOpModel.Text = Settings.DataOpLLM.Model;
 
             // Vba
             SetComboValue(cmbVbaProvider, Settings.VBASelfHealingLLM.Provider);
             txtVbaApiUrl.Text = Settings.VBASelfHealingLLM.ApiUrl;
             txtVbaApiKey.Text = Settings.VBASelfHealingLLM.ApiKey;
-            txtVbaModel.Text = Settings.VBASelfHealingLLM.Model;
+            cmbVbaModel.Text = Settings.VBASelfHealingLLM.Model;
         }
 
         private void LoadInFileMacros()
@@ -361,19 +373,24 @@ namespace ExcelSP2
             }
         }
 
-        private void CmbSimpleProvider_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void CmbSimpleProvider_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (txtSimpleApiUrl == null) return;
             var item = cmbSimpleProvider.SelectedItem as ComboBoxItem;
             if (item == null) return;
 
             string provider = item.Content.ToString();
+            bool isLocal = provider == "Ollama" || provider == "LM Studio";
+            
             if (provider == "Ollama") txtSimpleApiUrl.Text = "http://localhost:11434/v1";
             else if (provider == "LM Studio") txtSimpleApiUrl.Text = "http://localhost:1234/v1";
-            else if (provider == "OpenAI") txtSimpleApiUrl.Text = "https://api.openai.com/v1";
+
+            if (pnlSimpleApiKey != null) pnlSimpleApiKey.Visibility = isLocal ? Visibility.Collapsed : Visibility.Visible;
+
+            await PopulateModelList(provider, txtSimpleApiUrl.Text, cmbSimpleModel);
         }
 
-        private void CmbAdvancedProvider_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void CmbAdvancedProvider_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var cmb = sender as ComboBox;
             if (cmb == null) return;
@@ -383,16 +400,106 @@ namespace ExcelSP2
 
             string tag = cmb.Tag.ToString();
             string provider = item.Content.ToString();
+            bool isLocal = provider == "Ollama" || provider == "LM Studio";
             string url = "";
 
             if (provider == "Ollama") url = "http://localhost:11434/v1";
             else if (provider == "LM Studio") url = "http://localhost:1234/v1";
-            else if (provider == "OpenAI") url = "https://api.openai.com/v1";
 
-            if (tag == "Header") txtHeaderApiUrl.Text = url;
-            else if (tag == "Write") txtWriteApiUrl.Text = url;
-            else if (tag == "Op") txtOpApiUrl.Text = url;
-            else if (tag == "Vba") txtVbaApiUrl.Text = url;
+            ComboBox targetModelCmb = null;
+            TextBox targetUrlBox = null;
+            StackPanel targetApiKeyPanel = null;
+
+            if (tag == "Header") 
+            {
+                targetUrlBox = txtHeaderApiUrl;
+                targetModelCmb = cmbHeaderModel;
+                targetApiKeyPanel = pnlHeaderApiKey;
+            }
+            else if (tag == "Write") 
+            {
+                targetUrlBox = txtWriteApiUrl;
+                targetModelCmb = cmbWriteModel;
+                targetApiKeyPanel = pnlWriteApiKey;
+            }
+            else if (tag == "Op") 
+            {
+                targetUrlBox = txtOpApiUrl;
+                targetModelCmb = cmbOpModel;
+                targetApiKeyPanel = pnlOpApiKey;
+            }
+            else if (tag == "Vba") 
+            {
+                targetUrlBox = txtVbaApiUrl;
+                targetModelCmb = cmbVbaModel;
+                targetApiKeyPanel = pnlVbaApiKey;
+            }
+
+            if (targetUrlBox != null && !string.IsNullOrEmpty(url))
+            {
+                targetUrlBox.Text = url;
+            }
+            
+            if (targetApiKeyPanel != null)
+            {
+                targetApiKeyPanel.Visibility = isLocal ? Visibility.Collapsed : Visibility.Visible;
+            }
+
+            if (targetModelCmb != null && targetUrlBox != null)
+            {
+                await PopulateModelList(provider, targetUrlBox.Text, targetModelCmb);
+            }
+        }
+
+        private async Task PopulateModelList(string provider, string apiUrl, ComboBox targetCmb)
+        {
+            if (provider != "Ollama" && provider != "LM Studio") return;
+            
+            try
+            {
+                using (var client = new HttpClient())
+                {
+                    client.Timeout = TimeSpan.FromSeconds(5); // Increased timeout
+                    string requestUrl = apiUrl.TrimEnd('/') + "/models";
+                    
+                    var response = await client.GetAsync(requestUrl);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string json = await response.Content.ReadAsStringAsync();
+                        var serializer = new JavaScriptSerializer();
+                        dynamic result = serializer.Deserialize<dynamic>(json);
+                        
+                        var models = new List<string>();
+                        
+                        // OpenAI format (LM Studio & Ollama v1)
+                        if (result is Dictionary<string, object> dict && dict.ContainsKey("data"))
+                        {
+                            var data = dict["data"] as System.Collections.IEnumerable;
+                            if (data != null)
+                            {
+                                foreach (dynamic model in data)
+                                {
+                                    if (model is Dictionary<string, object> mDict && mDict.ContainsKey("id"))
+                                        models.Add(mDict["id"].ToString());
+                                }
+                            }
+                        }
+                        
+                        if (models.Count > 0)
+                        {
+                            targetCmb.ItemsSource = models;
+                            if (targetCmb.Items.Count > 0 && string.IsNullOrEmpty(targetCmb.Text))
+                            {
+                                targetCmb.SelectedIndex = 0;
+                            }
+                        }
+                    }
+                }
+            }
+            catch 
+            { 
+                // Silent fail
+            }
         }
 
         // --- Main Buttons ---
@@ -402,30 +509,31 @@ namespace ExcelSP2
             Settings.IsAdvancedMode = rbAdvanced.IsChecked == true;
 
             // Simple
+            Settings.Provider = (cmbSimpleProvider.SelectedItem as ComboBoxItem)?.Content.ToString();
             Settings.ApiUrl = txtSimpleApiUrl.Text;
             Settings.ApiKey = txtSimpleApiKey.Text;
-            Settings.Model = txtSimpleModel.Text;
+            Settings.Model = cmbSimpleModel.Text;
 
             // Advanced
             Settings.HeaderDetectionLLM.Provider = (cmbHeaderProvider.SelectedItem as ComboBoxItem)?.Content.ToString();
             Settings.HeaderDetectionLLM.ApiUrl = txtHeaderApiUrl.Text;
             Settings.HeaderDetectionLLM.ApiKey = txtHeaderApiKey.Text;
-            Settings.HeaderDetectionLLM.Model = txtHeaderModel.Text;
+            Settings.HeaderDetectionLLM.Model = cmbHeaderModel.Text;
 
             Settings.DataWriteLLM.Provider = (cmbWriteProvider.SelectedItem as ComboBoxItem)?.Content.ToString();
             Settings.DataWriteLLM.ApiUrl = txtWriteApiUrl.Text;
             Settings.DataWriteLLM.ApiKey = txtWriteApiKey.Text;
-            Settings.DataWriteLLM.Model = txtWriteModel.Text;
+            Settings.DataWriteLLM.Model = cmbWriteModel.Text;
 
             Settings.DataOpLLM.Provider = (cmbOpProvider.SelectedItem as ComboBoxItem)?.Content.ToString();
             Settings.DataOpLLM.ApiUrl = txtOpApiUrl.Text;
             Settings.DataOpLLM.ApiKey = txtOpApiKey.Text;
-            Settings.DataOpLLM.Model = txtOpModel.Text;
+            Settings.DataOpLLM.Model = cmbOpModel.Text;
 
             Settings.VBASelfHealingLLM.Provider = (cmbVbaProvider.SelectedItem as ComboBoxItem)?.Content.ToString();
             Settings.VBASelfHealingLLM.ApiUrl = txtVbaApiUrl.Text;
             Settings.VBASelfHealingLLM.ApiKey = txtVbaApiKey.Text;
-            Settings.VBASelfHealingLLM.Model = txtVbaModel.Text;
+            Settings.VBASelfHealingLLM.Model = cmbVbaModel.Text;
 
             var serializer = new JavaScriptSerializer();
             string json = serializer.Serialize(Settings);

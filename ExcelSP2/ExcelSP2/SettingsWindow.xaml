@@ -104,7 +104,7 @@
                                 <TextBlock Text="⚠️ Note: This mode handles both vision and text tasks. Please use a Multimodal model (e.g., gpt-4o, llava)." Foreground="OrangeRed" TextWrapping="Wrap" Margin="0,0,0,10" FontSize="11"/>
                                 <TextBlock Text="Provider:" Margin="0,5,0,0"/>
                                 <ComboBox x:Name="cmbSimpleProvider" SelectionChanged="CmbSimpleProvider_SelectionChanged">
-                                    <ComboBoxItem Content="OpenAI"/>
+                                    <ComboBoxItem Content="Custom (OpenAI Compatible)"/>
                                     <ComboBoxItem Content="Ollama"/>
                                     <ComboBoxItem Content="LM Studio"/>
                                 </ComboBox>
@@ -112,11 +112,13 @@
                                 <TextBlock Text="API URL:" Margin="0,5,0,0"/>
                                 <TextBox x:Name="txtSimpleApiUrl"/>
                                 
-                                <TextBlock Text="API Key:" Margin="0,5,0,0"/>
-                                <TextBox x:Name="txtSimpleApiKey"/>
+                                <StackPanel x:Name="pnlSimpleApiKey">
+                                    <TextBlock Text="API Key:" Margin="0,5,0,0"/>
+                                    <TextBox x:Name="txtSimpleApiKey"/>
+                                </StackPanel>
                                 
                                 <TextBlock Text="Model:" Margin="0,5,0,0"/>
-                                <TextBox x:Name="txtSimpleModel"/>
+                                <ComboBox x:Name="cmbSimpleModel" IsEditable="True"/>
                             </StackPanel>
                         </GroupBox>
 
@@ -128,7 +130,7 @@
                                     <TextBlock Text="⚠️ Requires Multimodal Model (Vision capable)" Foreground="OrangeRed" FontSize="10" Margin="0,0,0,5"/>
                                     <TextBlock Text="Provider:"/>
                                     <ComboBox x:Name="cmbHeaderProvider" SelectionChanged="CmbAdvancedProvider_SelectionChanged" Tag="Header">
-                                        <ComboBoxItem Content="OpenAI"/>
+                                        <ComboBoxItem Content="Custom (OpenAI Compatible)"/>
                                         <ComboBoxItem Content="Ollama"/>
                                         <ComboBoxItem Content="LM Studio"/>
                                     </ComboBox>
@@ -142,13 +144,13 @@
                                             <TextBlock Text="API URL:"/>
                                             <TextBox x:Name="txtHeaderApiUrl"/>
                                         </StackPanel>
-                                        <StackPanel Grid.Column="1" Margin="0,0,5,0">
+                                        <StackPanel x:Name="pnlHeaderApiKey" Grid.Column="1" Margin="0,0,5,0">
                                             <TextBlock Text="API Key:"/>
                                             <TextBox x:Name="txtHeaderApiKey"/>
                                         </StackPanel>
                                         <StackPanel Grid.Column="2">
                                             <TextBlock Text="Model:"/>
-                                            <TextBox x:Name="txtHeaderModel"/>
+                                            <ComboBox x:Name="cmbHeaderModel" IsEditable="True"/>
                                         </StackPanel>
                                     </Grid>
                                 </StackPanel>
@@ -160,7 +162,7 @@
                                     <TextBlock Text="⚠️ Requires Multimodal Model (Vision capable)" Foreground="OrangeRed" FontSize="10" Margin="0,0,0,5"/>
                                     <TextBlock Text="Provider:"/>
                                     <ComboBox x:Name="cmbWriteProvider" SelectionChanged="CmbAdvancedProvider_SelectionChanged" Tag="Write">
-                                        <ComboBoxItem Content="OpenAI"/>
+                                        <ComboBoxItem Content="Custom (OpenAI Compatible)"/>
                                         <ComboBoxItem Content="Ollama"/>
                                         <ComboBoxItem Content="LM Studio"/>
                                     </ComboBox>
@@ -174,13 +176,13 @@
                                             <TextBlock Text="API URL:"/>
                                             <TextBox x:Name="txtWriteApiUrl"/>
                                         </StackPanel>
-                                        <StackPanel Grid.Column="1" Margin="0,0,5,0">
+                                        <StackPanel x:Name="pnlWriteApiKey" Grid.Column="1" Margin="0,0,5,0">
                                             <TextBlock Text="API Key:"/>
                                             <TextBox x:Name="txtWriteApiKey"/>
                                         </StackPanel>
                                         <StackPanel Grid.Column="2">
                                             <TextBlock Text="Model:"/>
-                                            <TextBox x:Name="txtWriteModel"/>
+                                            <ComboBox x:Name="cmbWriteModel" IsEditable="True"/>
                                         </StackPanel>
                                     </Grid>
                                 </StackPanel>
@@ -192,7 +194,7 @@
                                     <TextBlock Text="ℹ️ Text-only model is sufficient (Code Generation)" Foreground="Gray" FontSize="10" Margin="0,0,0,5"/>
                                     <TextBlock Text="Provider:"/>
                                     <ComboBox x:Name="cmbOpProvider" SelectionChanged="CmbAdvancedProvider_SelectionChanged" Tag="Op">
-                                        <ComboBoxItem Content="OpenAI"/>
+                                        <ComboBoxItem Content="Custom (OpenAI Compatible)"/>
                                         <ComboBoxItem Content="Ollama"/>
                                         <ComboBoxItem Content="LM Studio"/>
                                     </ComboBox>
@@ -206,13 +208,13 @@
                                             <TextBlock Text="API URL:"/>
                                             <TextBox x:Name="txtOpApiUrl"/>
                                         </StackPanel>
-                                        <StackPanel Grid.Column="1" Margin="0,0,5,0">
+                                        <StackPanel x:Name="pnlOpApiKey" Grid.Column="1" Margin="0,0,5,0">
                                             <TextBlock Text="API Key:"/>
                                             <TextBox x:Name="txtOpApiKey"/>
                                         </StackPanel>
                                         <StackPanel Grid.Column="2">
                                             <TextBlock Text="Model:"/>
-                                            <TextBox x:Name="txtOpModel"/>
+                                            <ComboBox x:Name="cmbOpModel" IsEditable="True"/>
                                         </StackPanel>
                                     </Grid>
                                 </StackPanel>
@@ -224,7 +226,7 @@
                                     <TextBlock Text="ℹ️ Text-only model is sufficient" Foreground="Gray" FontSize="10" Margin="0,0,0,5"/>
                                     <TextBlock Text="Provider:"/>
                                     <ComboBox x:Name="cmbVbaProvider" SelectionChanged="CmbAdvancedProvider_SelectionChanged" Tag="Vba">
-                                        <ComboBoxItem Content="OpenAI"/>
+                                        <ComboBoxItem Content="Custom (OpenAI Compatible)"/>
                                         <ComboBoxItem Content="Ollama"/>
                                         <ComboBoxItem Content="LM Studio"/>
                                     </ComboBox>
@@ -238,13 +240,13 @@
                                             <TextBlock Text="API URL:"/>
                                             <TextBox x:Name="txtVbaApiUrl"/>
                                         </StackPanel>
-                                        <StackPanel Grid.Column="1" Margin="0,0,5,0">
+                                        <StackPanel x:Name="pnlVbaApiKey" Grid.Column="1" Margin="0,0,5,0">
                                             <TextBlock Text="API Key:"/>
                                             <TextBox x:Name="txtVbaApiKey"/>
                                         </StackPanel>
                                         <StackPanel Grid.Column="2">
                                             <TextBlock Text="Model:"/>
-                                            <TextBox x:Name="txtVbaModel"/>
+                                            <ComboBox x:Name="cmbVbaModel" IsEditable="True"/>
                                         </StackPanel>
                                     </Grid>
                                 </StackPanel>

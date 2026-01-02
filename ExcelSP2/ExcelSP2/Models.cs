@@ -14,6 +14,7 @@ namespace ExcelSP2
 
     public class AppSettings
     {
+        public string Provider { get; set; } // "OpenAI", "Ollama", "LMStudio"
         public string ApiUrl { get; set; }
         public string ApiKey { get; set; }
         public string Model { get; set; }

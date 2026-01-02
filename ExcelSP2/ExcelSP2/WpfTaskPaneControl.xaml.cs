@@ -713,7 +713,7 @@ namespace ExcelSP2
             {
                 return new LLMConfig 
                 { 
-                    Provider = currentSettings.Model?.Contains("gpt") == true ? "OpenAI" : "Ollama", 
+                    Provider = !string.IsNullOrEmpty(currentSettings.Provider) ? currentSettings.Provider : (currentSettings.Model?.Contains("gpt") == true ? "OpenAI" : "Ollama"), 
                     ApiUrl = currentSettings.ApiUrl, 
                     ApiKey = currentSettings.ApiKey, 
                     Model = currentSettings.Model 
