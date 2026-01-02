@@ -129,11 +129,11 @@
             <StackPanel Orientation="Horizontal">
                 <ComboBox x:Name="cmbMacros" Width="120" SelectionChanged="CmbMacros_SelectionChanged" DisplayMemberPath="Title"/>
                 <Button x:Name="btnRunMacro" Content="Run" Width="40" Background="LightGreen" Click="BtnRunMacro_Click"/>
-                <Button x:Name="btnSaveMacro" Content="Save" Width="40" Click="BtnSaveMacro_Click"/>
-                <Button x:Name="btnDeleteMacro" Content="Del" Width="35" Click="BtnDeleteMacro_Click"/>
+                <Button x:Name="btnSaveMacro" Content="Save" Width="40" Click="BtnSaveMacro_Click" Visibility="Collapsed"/>
+                <Button x:Name="btnDeleteMacro" Content="Del" Width="35" Click="BtnDeleteMacro_Click" Visibility="Collapsed"/>
             </StackPanel>
             
-            <TextBox x:Name="txtMacroCode" Height="80" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="12" Margin="0,5,0,0"/>
+            <TextBox x:Name="txtMacroCode" Height="80" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="12" Margin="0,5,0,0" Visibility="Collapsed"/>
             <TextBlock Text="Note: If VBE window pops up on error, please close it manually to allow AI repair." Foreground="Gray" FontSize="10" Margin="3,2,3,0" TextWrapping="Wrap"/>
 
             <!-- 5. Settings & Run -->

@@ -458,32 +458,20 @@ namespace ExcelSP2
                         break;
                     }
                 }
+
+                // Hide controls after save
+                txtMacroCode.Visibility = Visibility.Collapsed;
+                btnSaveMacro.Visibility = Visibility.Collapsed;
+                btnDeleteMacro.Visibility = Visibility.Collapsed;
             }
         }
 
         private void BtnDeleteMacro_Click(object sender, RoutedEventArgs e)
         {
-            if (cmbMacros.SelectedItem is MacroPreset selected)
-            {
-                if (selected.Title.EndsWith("(In-File)"))
-                {
-                    MessageBox.Show("Cannot delete In-File macros from here. Please use the VBA Editor.");
-                    return;
-                }
-
-                if (MessageBox.Show("Delete this macro?", "Confirm", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
-                {
-                    // Find in local presets
-                    var toRemove = macroPresets.FirstOrDefault(m => m.Title == selected.Title && m.Code == selected.Code);
-                    if (toRemove != null)
-                    {
-                        macroPresets.Remove(toRemove);
-                        SaveMacros();
-                        RefreshMacroCombo();
-                        txtMacroCode.Text = "";
-                    }
-                }
-            }
+            // Hide controls (Discard generated view)
+            txtMacroCode.Visibility = Visibility.Collapsed;
+            btnSaveMacro.Visibility = Visibility.Collapsed;
+            btnDeleteMacro.Visibility = Visibility.Collapsed;
         }
 
         private void SaveMacros()
@@ -1157,6 +1145,12 @@ namespace ExcelSP2
                 string vbaCode = result["choices"][0]["message"]["content"];
                 
                 vbaCode = vbaCode.Replace("```vba", "").Replace("```", "").Trim();
+
+                // Show the generated code and controls
+                txtMacroCode.Text = vbaCode;
+                txtMacroCode.Visibility = Visibility.Visible;
+                btnSaveMacro.Visibility = Visibility.Visible;
+                btnDeleteMacro.Visibility = Visibility.Visible;
 
                 lblStatus.Text = "Running Macro...";
                 RunGeneratedMacro(vbaCode);

@@ -23,6 +23,7 @@ This is an Excel VSTO Add-in based on .NET Framework 4.7.2, deeply integrated wi
   - Sends the selected data (CSV) and user Prompt to the LLM.
   - LLM automatically generates VBA code to process the data.
   - The plugin automatically executes the generated VBA code in the background.
+  - **Code Review**: After generation, the VBA code is displayed in the Macro Library section for review, allowing you to Save or Discard (Del) it.
   - Suitable for complex data cleanup, formatting, calculation, and other tasks.
 - **Note**: The "Reference Existing Data" toggle is automatically hidden in this mode as Data Op always requires data context.
 
@@ -43,6 +44,7 @@ This is an Excel VSTO Add-in based on .NET Framework 4.7.2, deeply integrated wi
   - **Provider Support**: OpenAI, Ollama, LM Studio.
 
 ### 4. Macro Library & Smart Self-healing
+- **Streamlined UI**: The code editor and management buttons (Save/Del) are hidden by default. They automatically appear when a new macro is generated via Data Op mode.
 - **One-Click Run**: Execute selected macros directly without opening the VBA editor.
 - **Smart Self-healing**:
   - When a macro fails, AI analyzes the error log, code intent, and current workbook context (e.g., Sheet names).
