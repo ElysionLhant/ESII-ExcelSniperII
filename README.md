@@ -29,7 +29,9 @@ This is an Excel VSTO Add-in based on .NET Framework 4.7.2, deeply integrated wi
 ### 3. Comprehensive Settings & Management
 - **New Settings Window**: A dedicated window for managing all configurations.
 - **Prompt Management**: Add, edit, and delete custom Prompt presets.
-- **Macro Management**: Manage and persist common VBA macro codes.
+- **Macro Management**:
+  - **Local Macros**: Manage and persist common VBA macro codes.
+  - **In-File Macros**: Automatically read and run macros from the active workbook.
 - **Advanced LLM Configuration**:
   - **Simple Mode**: Use a single global LLM configuration for all tasks.
   - **Advanced Mode**: Configure different LLM providers/models for specific tasks:
@@ -40,8 +42,12 @@ This is an Excel VSTO Add-in based on .NET Framework 4.7.2, deeply integrated wi
   - **Local Model Support**: Built-in detection for local **Ollama** and **LM Studio** instances.
   - **Provider Support**: OpenAI, Ollama, LM Studio.
 
-### 4. Macro Library
+### 4. Macro Library & Smart Self-healing
 - **One-Click Run**: Execute selected macros directly without opening the VBA editor.
+- **Smart Self-healing**:
+  - When a macro fails, AI analyzes the error log, code intent, and current workbook context (e.g., Sheet names).
+  - Automatically generates fixed code and saves it as a new macro.
+  - **Note**: If the VBA Editor window pops up due to a syntax error, please **close it manually** to allow the plugin to proceed with the AI repair process.
 - **Persistent Storage**: Macro code library is saved locally.
 
 ## Tech Stack

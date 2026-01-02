@@ -134,6 +134,7 @@
             </StackPanel>
             
             <TextBox x:Name="txtMacroCode" Height="80" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="12" Margin="0,5,0,0"/>
+            <TextBlock Text="Note: If VBE window pops up on error, please close it manually to allow AI repair." Foreground="Gray" FontSize="10" Margin="3,2,3,0" TextWrapping="Wrap"/>
 
             <!-- 5. Settings & Run -->
             <Button x:Name="btnSettings" Content="⚙️ Settings" Width="80" HorizontalAlignment="Left" Margin="3,10,3,3" Click="BtnSettings_Click"/>
