@@ -5,143 +5,246 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
              d:DesignHeight="800" d:DesignWidth="300"
-             Background="WhiteSmoke">
+             Background="White"
+             TextOptions.TextFormattingMode="Display"
+             TextOptions.TextRenderingMode="ClearType"
+             FontFamily="Segoe UI">
     <UserControl.Resources>
-        <Style TargetType="Button">
-            <Setter Property="Margin" Value="3"/>
-            <Setter Property="Padding" Value="5,2"/>
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderBrush" Value="Gray"/>
+        <!-- TextBox Style -->
+        <Style TargetType="TextBox">
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="Background" Value="#FAFAFA"/>
+            <Setter Property="BorderBrush" Value="#E0E0E0"/>
             <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="VerticalContentAlignment" Value="Top"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="4">
+                            <ScrollViewer x:Name="PART_ContentHost" Margin="0"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
-        <Style TargetType="TextBlock" x:Key="HeaderStyle">
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Margin" Value="3,15,3,5"/>
-            <Setter Property="FontSize" Value="12"/>
+        
+        <!-- Default Button Style -->
+        <Style TargetType="Button">
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Background" Value="#F5F5F5"/>
+            <Setter Property="BorderBrush" Value="#DDDDDD"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Margin" Value="0,0,5,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="3"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#EAEAEA"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#DADADA"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
+
+        <!-- Header Text Style -->
+        <Style x:Key="SectionHeaderTitle" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="Foreground" Value="#333333"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        
+        <!-- Header Icon Style -->
+        <Style x:Key="SectionHeaderIcon" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Foreground" Value="#0078D7"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+        </Style>
+
     </UserControl.Resources>
     
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="10">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="15">
+        <StackPanel>
             
-            <!-- 1. Selection Section -->
-            <TextBlock Text="1. Selection" Style="{StaticResource HeaderStyle}"/>
-            
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                <Button x:Name="btnCapture" Content="Capture" Width="75" Click="BtnCapture_Click"/>
-                <Button x:Name="btnPreview" Content="Preview" Width="75" Background="LightGray" Visibility="Collapsed" Click="BtnPreview_Click" MouseEnter="BtnPreview_MouseEnter" MouseLeave="BtnPreview_MouseLeave"/>
-                <Button x:Name="btnClearCapture" Content="✕" Width="30" Background="WhiteSmoke" BorderThickness="0" Visibility="Collapsed" Click="BtnClearCapture_Click" ToolTip="Clear Selection"/>
-                <Button x:Name="btnResetHeader" Content="Reset" Width="55" Background="LightSalmon" Visibility="Collapsed" Click="BtnResetHeader_Click"/>
-            </StackPanel>
-            
-            <TextBlock x:Name="lblSelectionInfo" Text="No selection captured." Foreground="Gray" TextWrapping="Wrap" Margin="3,5,3,5"/>
-            
-            <Popup x:Name="previewPopup" PlacementTarget="{Binding ElementName=btnPreview}" Placement="Left" AllowsTransparency="True">
-                <Border BorderBrush="DimGray" BorderThickness="1" Background="White" Padding="1">
-                    <Image x:Name="previewPopupImage" Width="300" Height="300" Stretch="Uniform"/>
-                </Border>
-            </Popup>
-
-            <!-- 2. Context Section -->
-            <StackPanel Orientation="Horizontal" Margin="0,15,0,0">
-                <TextBlock Text="2. Context Materials" FontWeight="Bold" Margin="3,5,3,0"/>
-                <Button x:Name="btnAddFile" Content="+" Width="25" Height="23" Margin="10,0,0,0" Click="BtnAddFile_Click"/>
-                <Button x:Name="btnClearContext" Content="🗑" Width="25" Height="23" Margin="5,0,0,0" Click="BtnClearContext_Click" ToolTip="Clear Context"/>
+            <!-- Selection Section -->
+            <StackPanel Margin="0,0,0,24">
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                    <TextBlock Text="&#xE722;" Style="{StaticResource SectionHeaderIcon}"/>
+                    <TextBlock Text="Selection" Style="{StaticResource SectionHeaderTitle}"/>
+                </StackPanel>
+                
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <Button x:Name="btnCapture" Content="Capture" Click="BtnCapture_Click"/>
+                    <Button x:Name="btnPreview" Content="Preview" Visibility="Collapsed" Click="BtnPreview_Click" MouseEnter="BtnPreview_MouseEnter" MouseLeave="BtnPreview_MouseLeave"/>
+                    <Button x:Name="btnClearCapture" Content="✕" Width="30" Visibility="Collapsed" Click="BtnClearCapture_Click" ToolTip="Clear Selection"/>
+                    <Button x:Name="btnResetHeader" Content="Reset" Visibility="Collapsed" Click="BtnResetHeader_Click"/>
+                </StackPanel>
+                
+                <TextBlock x:Name="lblSelectionInfo" Text="No selection captured." Foreground="#666666" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                
+                <Popup x:Name="previewPopup" PlacementTarget="{Binding ElementName=btnPreview}" Placement="Left" AllowsTransparency="True">
+                    <Border BorderBrush="#DDDDDD" BorderThickness="1" Background="White" Padding="1" CornerRadius="4">
+                        <Image x:Name="previewPopupImage" Width="300" Height="300" Stretch="Uniform"/>
+                    </Border>
+                </Popup>
             </StackPanel>
 
-            <Border Background="White" BorderBrush="Gray" BorderThickness="1" Margin="3,5,3,5" Height="120">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
+            <!-- Context Materials Section -->
+            <StackPanel Margin="0,0,0,24">
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                    <TextBlock Text="&#xE723;" Style="{StaticResource SectionHeaderIcon}"/>
+                    <TextBlock Text="Context Materials" Style="{StaticResource SectionHeaderTitle}"/>
                     
-                    <!-- Attachments Panel -->
-                    <ItemsControl x:Name="itemsAttachments" Grid.Row="0" MaxHeight="45">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <WrapPanel Orientation="Horizontal"/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border Background="#E6F0FF" Margin="3" Padding="3" CornerRadius="2">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="{Binding FileName}" FontSize="10" Margin="0,0,5,0" MaxWidth="100" TextTrimming="CharacterEllipsis"/>
-                                        <Button Content="✕" FontSize="10" Padding="0" Background="Transparent" BorderThickness="0" Foreground="Gray" Click="BtnRemoveAttachment_Click" Tag="{Binding FilePath}"/>
-                                    </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                    <!-- Action Buttons for Context -->
+                    <StackPanel Orientation="Horizontal" Margin="10,0,0,0">
+                        <Button x:Name="btnAddFile" Content="+" Width="24" Height="24" Padding="0" Click="BtnAddFile_Click" ToolTip="Add File"/>
+                        <Button x:Name="btnClearContext" Content="🗑" Width="24" Height="24" Padding="0" Click="BtnClearContext_Click" ToolTip="Clear Context"/>
+                    </StackPanel>
+                </StackPanel>
 
-                    <!-- Text Input -->
-                    <TextBox x:Name="txtContext" Grid.Row="1" AcceptsReturn="True" BorderThickness="0" Margin="5" VerticalScrollBarVisibility="Auto"
-                             PreviewKeyDown="TxtContext_KeyDown" AllowDrop="True" PreviewDragEnter="Context_DragEnter" PreviewDrop="Context_DragDrop"/>
+                <!-- Attachments List -->
+                <ItemsControl x:Name="itemsAttachments" Margin="0,0,0,8">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="#E6F0FF" Margin="0,0,6,6" Padding="6,4" CornerRadius="4">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding FileName}" FontSize="11" Margin="0,0,6,0" MaxWidth="120" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                    <Button Content="✕" FontSize="10" Padding="2,0" Background="Transparent" BorderThickness="0" Foreground="#999999" Click="BtnRemoveAttachment_Click" Tag="{Binding FilePath}" Margin="0"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Context Input -->
+                <TextBox x:Name="txtContext" Height="100" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
+                         PreviewKeyDown="TxtContext_KeyDown" AllowDrop="True" PreviewDragEnter="Context_DragEnter" PreviewDrop="Context_DragDrop"/>
+                
+                <TextBlock Text="Paste images/text or drag files here." Foreground="#999999" FontSize="11" Margin="0,4,0,0"/>
+            </StackPanel>
+
+            <!-- Prompt Section -->
+            <StackPanel Margin="0,0,0,24">
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                    <TextBlock Text="&#xE90A;" Style="{StaticResource SectionHeaderIcon}"/>
+                    <TextBlock Text="Prompt" Style="{StaticResource SectionHeaderTitle}"/>
+                </StackPanel>
+
+                <!-- Prompt Controls -->
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <ComboBox x:Name="cmbPrompts" Margin="0,0,8,0" SelectionChanged="CmbPrompts_SelectionChanged" DisplayMemberPath="Title" Height="26"/>
+                    
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <Button x:Name="btnSavePrompt" Content="Save" Click="BtnSavePrompt_Click"/>
+                        <Button x:Name="btnDeletePrompt" Content="🗑" Click="BtnDeletePrompt_Click" ToolTip="Clear Prompt Text"/>
+                    </StackPanel>
                 </Grid>
-            </Border>
-            <TextBlock Text="Paste images/text or drag files here." Foreground="Gray" FontSize="10" Margin="3,2,3,0"/>
 
-            <!-- 3. Prompt Section -->
-            <StackPanel Orientation="Horizontal" Margin="0,15,0,0">
-                <TextBlock Text="3. Prompt" FontWeight="Bold" Margin="3,5,10,0"/>
-                <ToggleButton x:Name="toggleMode" Width="90" Height="24" Content="Data Write" Checked="ToggleMode_Checked" Unchecked="ToggleMode_Unchecked">
-                    <ToggleButton.Style>
-                        <Style TargetType="ToggleButton">
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="ToggleButton">
-                                        <Border x:Name="border" CornerRadius="12" Background="LightGray" BorderBrush="Gray" BorderThickness="1">
-                                            <Grid>
-                                                <Ellipse x:Name="knob" Width="20" Height="20" Fill="White" HorizontalAlignment="Left" Margin="2"/>
-                                                <TextBlock x:Name="text" Text="Data Write" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0" FontSize="10" FontWeight="Bold"/>
-                                            </Grid>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsChecked" Value="True">
-                                                <Setter TargetName="border" Property="Background" Value="Orange"/>
-                                                <Setter TargetName="knob" Property="HorizontalAlignment" Value="Right"/>
-                                                <Setter TargetName="text" Property="HorizontalAlignment" Value="Left"/>
-                                                <Setter TargetName="text" Property="Margin" Value="8,0,0,0"/>
-                                                <Setter TargetName="text" Property="Text" Value="Data Op"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </ToggleButton.Style>
-                </ToggleButton>
+                <TextBox x:Name="txtPrompt" Height="80" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,0,0,8"/>
+                
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                     <ToggleButton x:Name="toggleMode" Width="90" Height="24" Content="Data Write" Checked="ToggleMode_Checked" Unchecked="ToggleMode_Unchecked">
+                        <ToggleButton.Style>
+                            <Style TargetType="ToggleButton">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ToggleButton">
+                                            <Border x:Name="border" CornerRadius="12" Background="#E0E0E0" BorderBrush="#CCCCCC" BorderThickness="1">
+                                                <Grid>
+                                                    <Ellipse x:Name="knob" Width="18" Height="18" Fill="White" HorizontalAlignment="Left" Margin="2"/>
+                                                    <TextBlock x:Name="text" Text="Data Write" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0" FontSize="10" FontWeight="SemiBold" Foreground="#555555"/>
+                                                </Grid>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsChecked" Value="True">
+                                                    <Setter TargetName="border" Property="Background" Value="#FF9800"/>
+                                                    <Setter TargetName="knob" Property="HorizontalAlignment" Value="Right"/>
+                                                    <Setter TargetName="text" Property="HorizontalAlignment" Value="Left"/>
+                                                    <Setter TargetName="text" Property="Margin" Value="8,0,0,0"/>
+                                                    <Setter TargetName="text" Property="Text" Value="Data Op"/>
+                                                    <Setter TargetName="text" Property="Foreground" Value="White"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ToggleButton.Style>
+                    </ToggleButton>
+                    
+                    <CheckBox x:Name="chkRefData" Content="Reference Existing Data" IsChecked="True" Margin="10,0,0,0" VerticalAlignment="Center" FontSize="12" ToolTip="If checked, sends current data (Image+CSV) for cleaning/fixing."/>
+                </StackPanel>
             </StackPanel>
 
-            <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                <ComboBox x:Name="cmbPrompts" Width="160" SelectionChanged="CmbPrompts_SelectionChanged" DisplayMemberPath="Title"/>
-                <Button x:Name="btnSavePrompt" Content="Save" Width="45" Click="BtnSavePrompt_Click"/>
-                <Button x:Name="btnDeletePrompt" Content="🗑" Width="40" Click="BtnDeletePrompt_Click" ToolTip="Clear Prompt Text"/>
+            <!-- Macro Library Section -->
+            <StackPanel Margin="0,0,0,24">
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                    <TextBlock Text="&#xE943;" Style="{StaticResource SectionHeaderIcon}"/>
+                    <TextBlock Text="Macro Library" Style="{StaticResource SectionHeaderTitle}"/>
+                </StackPanel>
+                
+                <StackPanel Orientation="Horizontal">
+                    <ComboBox x:Name="cmbMacros" Width="140" Margin="0,0,8,0" SelectionChanged="CmbMacros_SelectionChanged" DisplayMemberPath="Title" Height="26"/>
+                    <Button x:Name="btnRunMacro" Content="Run" Background="#E8F5E9" BorderBrush="#C8E6C9" Foreground="#2E7D32" Click="BtnRunMacro_Click"/>
+                    <Button x:Name="btnSaveMacro" Content="Save" Click="BtnSaveMacro_Click" Visibility="Collapsed"/>
+                    <Button x:Name="btnDeleteMacro" Content="Del" Click="BtnDeleteMacro_Click" Visibility="Collapsed"/>
+                </StackPanel>
+                
+                <TextBox x:Name="txtMacroCode" Height="80" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="12" Margin="0,8,0,0" Visibility="Collapsed"/>
+                <TextBlock Text="Note: If VBE window pops up on error, please close it manually to allow AI repair." Foreground="#999999" FontSize="11" Margin="0,4,0,0" TextWrapping="Wrap"/>
             </StackPanel>
-            
-            <TextBox x:Name="txtPrompt" Height="80" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,5,0,0"/>
-            
-            <CheckBox x:Name="chkRefData" Content="Reference Existing Data" IsChecked="True" Margin="3,5,0,0" FontSize="10" ToolTip="If checked, sends current data (Image+CSV) for cleaning/fixing. If unchecked, only sends header structure for fresh generation."/>
 
-            <!-- 4. Macro Section -->
-            <TextBlock Text="4. Macro Library" Style="{StaticResource HeaderStyle}"/>
-            
-            <StackPanel Orientation="Horizontal">
-                <ComboBox x:Name="cmbMacros" Width="120" SelectionChanged="CmbMacros_SelectionChanged" DisplayMemberPath="Title"/>
-                <Button x:Name="btnRunMacro" Content="Run" Width="40" Background="LightGreen" Click="BtnRunMacro_Click"/>
-                <Button x:Name="btnSaveMacro" Content="Save" Width="40" Click="BtnSaveMacro_Click" Visibility="Collapsed"/>
-                <Button x:Name="btnDeleteMacro" Content="Del" Width="35" Click="BtnDeleteMacro_Click" Visibility="Collapsed"/>
+            <!-- Footer / Settings & Run -->
+            <StackPanel Margin="0,10,0,0">
+                <Button x:Name="btnSettings" Content="Settings" HorizontalAlignment="Left" Margin="0,0,0,16" Click="BtnSettings_Click" Padding="12,6"/>
+                
+                <Button x:Name="btnRun" Content="Generate &amp; Fill" Height="42" Background="#0078D7" Foreground="White" FontWeight="SemiBold" FontSize="14" Click="BtnRun_Click" BorderThickness="0">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}" CornerRadius="4">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#006CC1"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter Property="Background" Value="#005A9E"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+                
+                <TextBlock x:Name="lblStatus" Text="Ready" Foreground="#0078D7" TextWrapping="Wrap" Margin="0,8,0,0" HorizontalAlignment="Center"/>
             </StackPanel>
-            
-            <TextBox x:Name="txtMacroCode" Height="80" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="12" Margin="0,5,0,0" Visibility="Collapsed"/>
-            <TextBlock Text="Note: If VBE window pops up on error, please close it manually to allow AI repair." Foreground="Gray" FontSize="10" Margin="3,2,3,0" TextWrapping="Wrap"/>
-
-            <!-- 5. Settings & Run -->
-            <Button x:Name="btnSettings" Content="⚙️ Settings" Width="80" HorizontalAlignment="Left" Margin="3,10,3,3" Click="BtnSettings_Click"/>
-            
-            <Button x:Name="btnRun" Content="Generate &amp; Fill" Height="40" Background="DodgerBlue" Foreground="White" FontWeight="Bold" Margin="3,20,3,3" Click="BtnRun_Click"/>
-            <TextBlock x:Name="lblStatus" Text="Ready" Foreground="Blue" TextWrapping="Wrap" Margin="3,5,3,5"/>
             
         </StackPanel>
     </ScrollViewer>
