@@ -33,7 +33,7 @@ You can select an area like operating an RTS game, and then click your custom ac
 | Scenario | Traditional Copilot / Manual | Sniper II Workflow |
 | :--- | :--- | :--- |
 | **Unstructured to Structured** | Manually typing data from images, or fixing formats after OCR | **Screenshot -> Generate**. AI looks at the image and fills the table directly, in one step. |
-| **Complex Data Cleaning** | Searching Baidu/Google for Excel formulas, debugging for half an hour | **Input Command**: "Mark all values greater than 100 in column A as red, and extract Japanese from remarks to column C". |
+| **Complex Data Cleaning** | Searching Google for Excel formulas, debugging for half an hour | **Input Command**: "Mark all values greater than 100 in column A as red, and extract Japanese from remarks to column C". |
 | **VBA Writing** | Open editor, write code, error, check docs, debug again | **Input Command -> Run**. Error? AI fixes it automatically, run again. |
 
 ## Advanced Configuration & Macros
