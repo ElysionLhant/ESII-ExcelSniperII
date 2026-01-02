@@ -120,6 +120,8 @@
             </StackPanel>
             
             <TextBox x:Name="txtPrompt" Height="80" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,5,0,0"/>
+            
+            <CheckBox x:Name="chkRefData" Content="Reference Existing Data" IsChecked="True" Margin="3,5,0,0" FontSize="10" ToolTip="If checked, sends current data (Image+CSV) for cleaning/fixing. If unchecked, only sends header structure for fresh generation."/>
 
             <!-- 4. Macro Section -->
             <TextBlock Text="4. Macro Library" Style="{StaticResource HeaderStyle}"/>

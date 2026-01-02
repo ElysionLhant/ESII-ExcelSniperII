@@ -514,11 +514,13 @@ namespace ExcelSP2
         private void ToggleMode_Checked(object sender, RoutedEventArgs e)
         {
             // Data Op Mode
+            if (chkRefData != null) chkRefData.Visibility = Visibility.Collapsed;
         }
 
         private void ToggleMode_Unchecked(object sender, RoutedEventArgs e)
         {
             // Data Write Mode
+            if (chkRefData != null) chkRefData.Visibility = Visibility.Visible;
         }
 
         // --- Main Execution Logic ---
@@ -625,6 +627,21 @@ namespace ExcelSP2
                 contextBuilder.AppendLine("(NOTE: This header is provided for context only. Do NOT include it in the output data.)");
                 contextBuilder.AppendLine($"Target Write Start Row: {startRow}");
                 
+                bool useExistingData = chkRefData.IsChecked == true;
+
+                if (useExistingData)
+                {
+                    // Send CSV data for cleaning/fixing context
+                    string csvData = GetRangeCsv(originalRange);
+                    contextBuilder.AppendLine("--- Existing Data (CSV) ---");
+                    contextBuilder.AppendLine(csvData);
+                }
+                else
+                {
+                    contextBuilder.AppendLine("--- Instruction ---");
+                    contextBuilder.AppendLine("Ignore any existing data values. Generate completely new data based on the header structure.");
+                }
+                
                 List<string> additionalImages = new List<string>();
 
                 if (!string.IsNullOrWhiteSpace(manualContext))
@@ -667,7 +684,8 @@ namespace ExcelSP2
                 var userContent = new List<object>();
                 userContent.Add(new { type = "text", text = prompt + "\n\n" + contextBuilder.ToString() });
 
-                if (!string.IsNullOrEmpty(capturedImageBase64))
+                // Only send captured image if "Reference Existing Data" is checked
+                if (useExistingData && !string.IsNullOrEmpty(capturedImageBase64))
                 {
                     userContent.Add(new {
                         type = "image_url",
