@@ -2,6 +2,25 @@
 
 This is an Excel VSTO Add-in based on .NET Framework 4.7.2, deeply integrated with LLMs (OpenAI, Ollama, LM Studio, etc.), designed to automate Excel data processing tasks through AI assistance.
 
+## Introduction
+To be honest, I believe most white-collar workers sitting in offices have been poisoned by Excel at some point. This damn software consumes at least 30% of your working hours. Yet, there is very little meaningful work involved. Most of the time, we are just adjusting formats, tweaking fonts, and tweaking all sorts of things.
+
+In order to make unstructured data structured while keeping it aesthetically pleasing for people other than the Excel processor to view, we often have to pay several times the effort of the content itself, and that content often has no meaning, at least to the person processing the Excel. The effort spent on processing these garbage files and formats is something the author of this tool does not possess, and even if I did, I wouldn't want to waste it on work.
+
+**Therefore, this plugin was born. Excel Sniper II.**
+
+The function of this tool, in general, is to let the LLM handle those meaningless copy-pasting, formula writing, and format modifying tasks for you. By creating an intuitive human-machine collaboration workflow, let the LLM handle those dirty and tiring jobs.
+
+Rest assured, the author does not intend for you to repeatedly talk to a ChatUI inside a tool for half a day, then copy-paste and go to the next window to continue. **That is the existence value of Copilot, not this tool.**
+
+This tool allows you to customize and save your Prompt wording for data filling, and can also let the LLM write custom VBA macros for you or even heal VBA macros, and preserve all your work results for use next time. In this way, every time you use this tool, you are forging your own silver bullet against the greedy vampire that is office affairs. Then use the LLM as your weapon to shoot dead those repetitive tasks.
+
+You can equip different LLMs for different functional components to maximize effectiveness. At the same time, you can run software like Ollama, LM Studio, etc. on your local computer to provide LLM services, so you can also save on Microsoft Copilot's subscription fees. This makes your data more secure.
+
+You can select an area like operating an RTS game, and then click your custom action to make the data become what you want.
+
+*The inspiration for the name of this plugin comes from the mass-produced machine GM Sniper II in the author's favorite Gundam work.*
+
 ## Core Features
 
 ### 1. Smart Fill & Generation (Image Mode / Data Write)
