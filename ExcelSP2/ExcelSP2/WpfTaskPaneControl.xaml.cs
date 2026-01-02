@@ -391,9 +391,46 @@ namespace ExcelSP2
 
         private void RefreshMacroCombo()
         {
+            var allMacros = new List<MacroPreset>(macroPresets);
+
+            // Load In-File Macros
+            try
+            {
+                var app = Globals.ThisAddIn.Application;
+                if (app.ActiveWorkbook != null)
+                {
+                    try
+                    {
+                        var proj = app.ActiveWorkbook.VBProject;
+                        foreach (dynamic vbComp in proj.VBComponents)
+                        {
+                            if (vbComp.CodeModule != null)
+                            {
+                                int count = vbComp.CodeModule.CountOfLines;
+                                if (count > 0)
+                                {
+                                    string code = vbComp.CodeModule.Lines(1, count);
+                                    var matches = Regex.Matches(code, @"Sub\s+(\w+)", RegexOptions.IgnoreCase);
+                                    foreach (Match match in matches)
+                                    {
+                                        allMacros.Add(new MacroPreset
+                                        {
+                                            Title = match.Groups[1].Value + " (In-File)",
+                                            Code = code
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+
             cmbMacros.ItemsSource = null;
-            cmbMacros.ItemsSource = macroPresets;
-            if (macroPresets.Count > 0) cmbMacros.SelectedIndex = 0;
+            cmbMacros.ItemsSource = allMacros;
+            if (allMacros.Count > 0) cmbMacros.SelectedIndex = 0;
         }
 
         private void CmbMacros_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -412,20 +449,39 @@ namespace ExcelSP2
                 macroPresets.Add(new MacroPreset { Title = title, Code = txtMacroCode.Text });
                 SaveMacros();
                 RefreshMacroCombo();
-                cmbMacros.SelectedIndex = macroPresets.Count - 1;
+                // Select the newly added macro (it will be in the local part)
+                foreach(var item in cmbMacros.Items)
+                {
+                    if (item is MacroPreset m && m.Title == title)
+                    {
+                        cmbMacros.SelectedItem = m;
+                        break;
+                    }
+                }
             }
         }
 
         private void BtnDeleteMacro_Click(object sender, RoutedEventArgs e)
         {
-            if (cmbMacros.SelectedIndex >= 0)
+            if (cmbMacros.SelectedItem is MacroPreset selected)
             {
+                if (selected.Title.EndsWith("(In-File)"))
+                {
+                    MessageBox.Show("Cannot delete In-File macros from here. Please use the VBA Editor.");
+                    return;
+                }
+
                 if (MessageBox.Show("Delete this macro?", "Confirm", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
                 {
-                    macroPresets.RemoveAt(cmbMacros.SelectedIndex);
-                    SaveMacros();
-                    RefreshMacroCombo();
-                    txtMacroCode.Text = "";
+                    // Find in local presets
+                    var toRemove = macroPresets.FirstOrDefault(m => m.Title == selected.Title && m.Code == selected.Code);
+                    if (toRemove != null)
+                    {
+                        macroPresets.Remove(toRemove);
+                        SaveMacros();
+                        RefreshMacroCombo();
+                        txtMacroCode.Text = "";
+                    }
                 }
             }
         }
@@ -437,10 +493,43 @@ namespace ExcelSP2
             File.WriteAllText(macrosFilePath, json);
         }
 
-        private void BtnRunMacro_Click(object sender, RoutedEventArgs e)
+        private string SanitizeVbaCode(string code)
+        {
+            if (string.IsNullOrEmpty(code)) return code;
+            
+            // Replace Chinese/Smart quotes
+            code = code.Replace("“", "\"").Replace("”", "\"");
+            
+            // Replace Chinese/Smart apostrophes (comments)
+            code = code.Replace("‘", "'").Replace("’", "'");
+            
+            // Replace Chinese punctuation
+            code = code.Replace("，", ",");
+            code = code.Replace("：", ":");
+            code = code.Replace("；", ":"); // VBA uses colon for multi-statement lines
+            code = code.Replace("（", "(").Replace("）", ")");
+            
+            return code;
+        }
+
+        private async void BtnRunMacro_Click(object sender, RoutedEventArgs e)
         {
             string code = txtMacroCode.Text;
             if (string.IsNullOrWhiteSpace(code)) return;
+
+            // 1. Pre-emptive Sanitization (Fix common syntax errors like Chinese quotes)
+            string sanitizedCode = SanitizeVbaCode(code);
+            if (code != sanitizedCode)
+            {
+                code = sanitizedCode;
+                txtMacroCode.Text = code; // Update UI to show fixed code
+            }
+
+            string macroName = "";
+            Excel.Application app = Globals.ThisAddIn.Application;
+            bool originalDisplayAlerts = app.DisplayAlerts;
+            bool originalScreenUpdating = app.ScreenUpdating;
+            bool originalInteractive = app.Interactive;
 
             try
             {
@@ -450,9 +539,14 @@ namespace ExcelSP2
                     MessageBox.Show("Could not find a 'Sub Name()' in the code. Please ensure your macro starts with 'Sub Name()'.");
                     return;
                 }
-                string macroName = match.Groups[1].Value;
+                macroName = match.Groups[1].Value;
 
-                Excel.Application app = Globals.ThisAddIn.Application;
+                // Attempt to suppress VBE popup
+                app.DisplayAlerts = false;
+                app.ScreenUpdating = false;
+                app.Interactive = false; // Block user interaction
+                try { app.VBE.MainWindow.Visible = false; } catch { }
+
                 dynamic vbProj = app.VBE.ActiveVBProject;
                 dynamic vbComp = vbProj.VBComponents.Add(1); 
                 
@@ -464,12 +558,151 @@ namespace ExcelSP2
                 finally
                 {
                     vbProj.VBComponents.Remove(vbComp);
+                    app.DisplayAlerts = originalDisplayAlerts;
+                    app.ScreenUpdating = originalScreenUpdating;
+                    app.Interactive = originalInteractive;
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error running macro. \n\nIMPORTANT: You must enable 'Trust access to the VBA project object model' in Excel Options -> Trust Center -> Trust Center Settings -> Macro Settings.\n\nDetails: " + ex.Message);
+                // Ensure state is restored
+                app.DisplayAlerts = originalDisplayAlerts;
+                app.ScreenUpdating = originalScreenUpdating;
+                app.Interactive = originalInteractive;
+
+                var result = MessageBox.Show($"Error running macro: {ex.Message}\n\n(If the VBA Editor opened, please close it.)\n\nDo you want to attempt AI Repair?", "Macro Error", MessageBoxButton.YesNo);
+                if (result == MessageBoxResult.Yes)
+                {
+                    await RepairMacro(code, ex.Message, macroName);
+                }
             }
+        }
+
+        private string GetWorkbookContext()
+        {
+            try
+            {
+                var app = Globals.ThisAddIn.Application;
+                var wb = app.ActiveWorkbook;
+                if (wb == null) return "No active workbook.";
+
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine($"Active Sheet Name: {wb.ActiveSheet.Name}");
+                sb.Append("All Sheet Names: ");
+                foreach (Excel.Worksheet sheet in wb.Sheets)
+                {
+                    sb.Append(sheet.Name + ", ");
+                }
+                return sb.ToString().TrimEnd(',', ' ');
+            }
+            catch
+            {
+                return "Could not retrieve workbook context.";
+            }
+        }
+
+        private async Task RepairMacro(string originalCode, string errorLog, string originalName)
+        {
+            try
+            {
+                var config = GetConfig("Vba");
+                
+                // Step 1: Analyze Intent
+                lblStatus.Text = "Analyzing Intent...";
+                string context = GetWorkbookContext();
+                
+                string intentPrompt = $"You are an expert VBA developer. Analyze the following VBA code and briefly explain what the user was trying to achieve. \n\nCode:\n{originalCode}\n\nOutput the intent in one or two sentences.";
+                string intent = await CallLLM(config, intentPrompt);
+
+                // Step 2: Fix Code
+                lblStatus.Text = "Applying Fixes...";
+                string fixPrompt = $"You are an expert VBA developer. \n" +
+                                   $"The user's original intent was: {intent}\n" +
+                                   $"The code failed with error: {errorLog}\n" +
+                                   $"Current Workbook Context: {context}\n\n" +
+                                   $"Original Code:\n{originalCode}\n\n" +
+                                   $"Please fix the code to achieve the intent and resolve the error. \n" +
+                                   $"Ensure sheet names and range references match the provided context if applicable. \n" +
+                                   $"Return ONLY the fixed VBA code block (no markdown, no explanations).";
+
+                string fixedCode = await CallLLM(config, fixPrompt); 
+                fixedCode = CleanLLMOutput(fixedCode);
+                
+                string newName = originalName + "_repair";
+                fixedCode = Regex.Replace(fixedCode, @"Sub\s+" + originalName, $"Sub {newName}", RegexOptions.IgnoreCase);
+                
+                macroPresets.Add(new MacroPreset { Title = newName, Code = fixedCode });
+                SaveMacros();
+                RefreshMacroCombo();
+                
+                foreach(var item in cmbMacros.Items)
+                {
+                    if (item is MacroPreset m && m.Title == newName)
+                    {
+                        cmbMacros.SelectedItem = m;
+                        break;
+                    }
+                }
+                
+                MessageBox.Show($"Macro repaired and saved as '{newName}'.", "Repair Complete");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Repair failed: " + ex.Message);
+            }
+            finally
+            {
+                lblStatus.Text = "Ready";
+            }
+        }
+
+        private async Task<string> CallLLM(LLMConfig config, string prompt)
+        {
+            // Ensure TLS 1.2 is used (crucial for OpenAI)
+            System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+
+            if (string.IsNullOrEmpty(config.ApiUrl))
+                throw new Exception("API URL is not configured. Please check your settings.");
+
+            var messages = new List<object>
+            {
+                new { role = "system", content = "You are an expert VBA developer." },
+                new { role = "user", content = prompt }
+            };
+
+            var requestBody = new
+            {
+                model = config.Model,
+                messages = messages,
+                max_tokens = 4096,
+                temperature = 0.1
+            };
+
+            using (HttpClient client = new HttpClient())
+            {
+                client.Timeout = TimeSpan.FromMinutes(2);
+                if (!string.IsNullOrEmpty(config.ApiKey))
+                    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {config.ApiKey}");
+
+                var serializer = new JavaScriptSerializer();
+                string json = serializer.Serialize(requestBody);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await client.PostAsync($"{config.ApiUrl}/chat/completions", content);
+                string responseString = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                    throw new Exception($"API Error: {response.StatusCode}\n{responseString}");
+
+                dynamic result = serializer.Deserialize<dynamic>(responseString);
+                return result["choices"][0]["message"]["content"];
+            }
+        }
+
+        private string CleanLLMOutput(string content)
+        {
+            content = content.Replace("```vba", "").Replace("```", "").Trim();
+            return content;
         }
 
         // --- Settings Logic ---

@@ -52,19 +52,24 @@
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="3*"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="1*"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Text="Macros:" FontWeight="Bold" Margin="0,0,0,5"/>
+                    <TextBlock Text="Local Macros:" FontWeight="Bold" Margin="0,0,0,5"/>
                     <ListBox x:Name="lstMacros" Grid.Row="1" Margin="0,0,5,0" DisplayMemberPath="Title" SelectionChanged="LstMacros_SelectionChanged"/>
 
-                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,5,5,0">
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,5,5,10">
                         <Button x:Name="btnAddMacro" Content="Add" Width="60" Margin="0,0,5,0" Click="BtnAddMacro_Click"/>
                         <Button x:Name="btnDeleteMacro" Content="Delete" Width="60" Click="BtnDeleteMacro_Click"/>
                     </StackPanel>
 
-                    <StackPanel Grid.Column="1" Grid.RowSpan="3">
+                    <TextBlock Grid.Row="3" Text="In-File Macros:" FontWeight="Bold" Margin="0,0,0,5"/>
+                    <ListBox x:Name="lstInFileMacros" Grid.Row="4" Margin="0,0,5,0" DisplayMemberPath="Title" SelectionChanged="LstInFileMacros_SelectionChanged"/>
+
+                    <StackPanel Grid.Column="1" Grid.RowSpan="5">
                         <TextBlock Text="Title:" FontWeight="Bold"/>
                         <TextBox x:Name="txtMacroTitle" Margin="0,5,0,10"/>
                         <TextBlock Text="Code:" FontWeight="Bold"/>
@@ -81,7 +86,7 @@
                         <!-- Local Detection -->
                         <GroupBox Header="Local Model Detection" Margin="0,0,0,10">
                             <StackPanel Orientation="Horizontal" Margin="5">
-                                <Button x:Name="btnDetectModels" Content="Detect Local Models (Ollama/LMStudio)" Padding="5" Click="BtnDetectModels_Click"/>
+                                <Button x:Name="btnDetectModels" Content="Detect Local Models (Ollama/LM Studio)" Padding="5" Click="BtnDetectModels_Click"/>
                                 <TextBlock x:Name="lblDetectionStatus" Text="" VerticalAlignment="Center" Margin="10,0,0,0" Foreground="Gray"/>
                             </StackPanel>
                         </GroupBox>
@@ -101,7 +106,7 @@
                                 <ComboBox x:Name="cmbSimpleProvider" SelectionChanged="CmbSimpleProvider_SelectionChanged">
                                     <ComboBoxItem Content="OpenAI"/>
                                     <ComboBoxItem Content="Ollama"/>
-                                    <ComboBoxItem Content="LMStudio"/>
+                                    <ComboBoxItem Content="LM Studio"/>
                                 </ComboBox>
                                 
                                 <TextBlock Text="API URL:" Margin="0,5,0,0"/>
@@ -125,7 +130,7 @@
                                     <ComboBox x:Name="cmbHeaderProvider" SelectionChanged="CmbAdvancedProvider_SelectionChanged" Tag="Header">
                                         <ComboBoxItem Content="OpenAI"/>
                                         <ComboBoxItem Content="Ollama"/>
-                                        <ComboBoxItem Content="LMStudio"/>
+                                        <ComboBoxItem Content="LM Studio"/>
                                     </ComboBox>
                                     <Grid Margin="0,5,0,0">
                                         <Grid.ColumnDefinitions>
@@ -157,7 +162,7 @@
                                     <ComboBox x:Name="cmbWriteProvider" SelectionChanged="CmbAdvancedProvider_SelectionChanged" Tag="Write">
                                         <ComboBoxItem Content="OpenAI"/>
                                         <ComboBoxItem Content="Ollama"/>
-                                        <ComboBoxItem Content="LMStudio"/>
+                                        <ComboBoxItem Content="LM Studio"/>
                                     </ComboBox>
                                     <Grid Margin="0,5,0,0">
                                         <Grid.ColumnDefinitions>
@@ -189,7 +194,7 @@
                                     <ComboBox x:Name="cmbOpProvider" SelectionChanged="CmbAdvancedProvider_SelectionChanged" Tag="Op">
                                         <ComboBoxItem Content="OpenAI"/>
                                         <ComboBoxItem Content="Ollama"/>
-                                        <ComboBoxItem Content="LMStudio"/>
+                                        <ComboBoxItem Content="LM Studio"/>
                                     </ComboBox>
                                     <Grid Margin="0,5,0,0">
                                         <Grid.ColumnDefinitions>
@@ -221,7 +226,7 @@
                                     <ComboBox x:Name="cmbVbaProvider" SelectionChanged="CmbAdvancedProvider_SelectionChanged" Tag="Vba">
                                         <ComboBoxItem Content="OpenAI"/>
                                         <ComboBoxItem Content="Ollama"/>
-                                        <ComboBoxItem Content="LMStudio"/>
+                                        <ComboBoxItem Content="LM Studio"/>
                                     </ComboBox>
                                     <Grid Margin="0,5,0,0">
                                         <Grid.ColumnDefinitions>

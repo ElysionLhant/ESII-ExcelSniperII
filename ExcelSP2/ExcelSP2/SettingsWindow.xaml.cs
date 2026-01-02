@@ -14,6 +14,7 @@ namespace ExcelSP2
     {
         public List<PromptPreset> Prompts { get; private set; }
         public List<MacroPreset> Macros { get; private set; }
+        public List<MacroPreset> InFileMacros { get; private set; }
         public AppSettings Settings { get; private set; }
 
         private string promptsFilePath;
@@ -66,6 +67,11 @@ namespace ExcelSP2
             lstMacros.ItemsSource = null;
             lstMacros.ItemsSource = Macros;
 
+            // Load In-File Macros
+            LoadInFileMacros();
+            lstInFileMacros.ItemsSource = null;
+            lstInFileMacros.ItemsSource = InFileMacros;
+
             // Load Settings
             if (File.Exists(settingsFilePath))
             {
@@ -113,6 +119,48 @@ namespace ExcelSP2
             txtVbaApiUrl.Text = Settings.VBASelfHealingLLM.ApiUrl;
             txtVbaApiKey.Text = Settings.VBASelfHealingLLM.ApiKey;
             txtVbaModel.Text = Settings.VBASelfHealingLLM.Model;
+        }
+
+        private void LoadInFileMacros()
+        {
+            InFileMacros = new List<MacroPreset>();
+            try
+            {
+                var app = Globals.ThisAddIn.Application;
+                if (app.ActiveWorkbook != null)
+                {
+                    try
+                    {
+                        // Check access
+                        var proj = app.ActiveWorkbook.VBProject;
+                        foreach (dynamic vbComp in proj.VBComponents)
+                        {
+                            if (vbComp.CodeModule != null)
+                            {
+                                int count = vbComp.CodeModule.CountOfLines;
+                                if (count > 0)
+                                {
+                                    string code = vbComp.CodeModule.Lines(1, count);
+                                    var matches = System.Text.RegularExpressions.Regex.Matches(code, @"Sub\s+(\w+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                                    foreach (System.Text.RegularExpressions.Match match in matches)
+                                    {
+                                        InFileMacros.Add(new MacroPreset
+                                        {
+                                            Title = match.Groups[1].Value,
+                                            Code = code
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        InFileMacros.Add(new MacroPreset { Title = "Enable 'Trust access to VBA' to see macros", Code = "" });
+                    }
+                }
+            }
+            catch { }
         }
 
         private void SetComboValue(ComboBox cmb, string value)
@@ -186,6 +234,35 @@ namespace ExcelSP2
             {
                 txtMacroTitle.Text = m.Title;
                 txtMacroCode.Text = m.Code;
+                btnSaveMacro.IsEnabled = true;
+                btnDeleteMacro.IsEnabled = true;
+                
+                // Deselect other list to avoid confusion
+                if (lstInFileMacros.SelectedIndex != -1)
+                {
+                    lstInFileMacros.SelectionChanged -= LstInFileMacros_SelectionChanged;
+                    lstInFileMacros.SelectedIndex = -1;
+                    lstInFileMacros.SelectionChanged += LstInFileMacros_SelectionChanged;
+                }
+            }
+        }
+
+        private void LstInFileMacros_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (lstInFileMacros.SelectedItem is MacroPreset m)
+            {
+                txtMacroTitle.Text = m.Title;
+                txtMacroCode.Text = m.Code;
+                btnSaveMacro.IsEnabled = false; // Cannot edit in-file macros directly here
+                btnDeleteMacro.IsEnabled = false;
+
+                // Deselect other list
+                if (lstMacros.SelectedIndex != -1)
+                {
+                    lstMacros.SelectionChanged -= LstMacros_SelectionChanged;
+                    lstMacros.SelectedIndex = -1;
+                    lstMacros.SelectionChanged += LstMacros_SelectionChanged;
+                }
             }
         }
 
@@ -238,7 +315,7 @@ namespace ExcelSP2
 
             using (var client = new HttpClient())
             {
-                client.Timeout = TimeSpan.FromSeconds(2);
+                client.Timeout = TimeSpan.FromSeconds(5);
                 
                 // Check Ollama
                 try
@@ -292,7 +369,7 @@ namespace ExcelSP2
 
             string provider = item.Content.ToString();
             if (provider == "Ollama") txtSimpleApiUrl.Text = "http://localhost:11434/v1";
-            else if (provider == "LMStudio") txtSimpleApiUrl.Text = "http://localhost:1234/v1";
+            else if (provider == "LM Studio") txtSimpleApiUrl.Text = "http://localhost:1234/v1";
             else if (provider == "OpenAI") txtSimpleApiUrl.Text = "https://api.openai.com/v1";
         }
 
@@ -309,7 +386,7 @@ namespace ExcelSP2
             string url = "";
 
             if (provider == "Ollama") url = "http://localhost:11434/v1";
-            else if (provider == "LMStudio") url = "http://localhost:1234/v1";
+            else if (provider == "LM Studio") url = "http://localhost:1234/v1";
             else if (provider == "OpenAI") url = "https://api.openai.com/v1";
 
             if (tag == "Header") txtHeaderApiUrl.Text = url;
