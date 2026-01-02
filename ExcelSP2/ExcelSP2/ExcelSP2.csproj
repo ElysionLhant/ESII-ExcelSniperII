@@ -240,6 +240,13 @@
     <Compile Include="TaskPaneHostControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
+    <Compile Include="SettingsWindow.xaml.cs">
+      <DependentUpon>SettingsWindow.xaml</DependentUpon>
+    </Compile>
+    <Page Include="SettingsWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Compile Include="WpfTaskPaneControl.xaml.cs">
       <DependentUpon>WpfTaskPaneControl.xaml</DependentUpon>
     </Compile>

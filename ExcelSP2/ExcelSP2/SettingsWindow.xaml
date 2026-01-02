@@ -1,0 +1,258 @@
+<Window x:Class="ExcelSP2.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Settings" Height="600" Width="800" WindowStartupLocation="CenterScreen">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TabControl Grid.Row="0">
+            <!-- Prompt Management -->
+            <TabItem Header="Prompt Management">
+                <Grid Margin="5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="200"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="Prompts:" FontWeight="Bold" Margin="0,0,0,5"/>
+                    <ListBox x:Name="lstPrompts" Grid.Row="1" Margin="0,0,5,0" DisplayMemberPath="Title" SelectionChanged="LstPrompts_SelectionChanged"/>
+                    
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,5,5,0">
+                        <Button x:Name="btnAddPrompt" Content="Add" Width="60" Margin="0,0,5,0" Click="BtnAddPrompt_Click"/>
+                        <Button x:Name="btnDeletePrompt" Content="Delete" Width="60" Click="BtnDeletePrompt_Click"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Grid.RowSpan="3">
+                        <TextBlock Text="Title:" FontWeight="Bold"/>
+                        <TextBox x:Name="txtPromptTitle" Margin="0,5,0,10"/>
+                        <TextBlock Text="Content:" FontWeight="Bold"/>
+                        <TextBox x:Name="txtPromptContent" Height="300" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Margin="0,5,0,0"/>
+                        <Button x:Name="btnSavePrompt" Content="Save Changes" HorizontalAlignment="Right" Margin="0,10,0,0" Width="100" Click="BtnSavePrompt_Click"/>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <!-- VBA Macro Management -->
+            <TabItem Header="VBA Macro Management">
+                <Grid Margin="5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="200"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="Macros:" FontWeight="Bold" Margin="0,0,0,5"/>
+                    <ListBox x:Name="lstMacros" Grid.Row="1" Margin="0,0,5,0" DisplayMemberPath="Title" SelectionChanged="LstMacros_SelectionChanged"/>
+
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,5,5,0">
+                        <Button x:Name="btnAddMacro" Content="Add" Width="60" Margin="0,0,5,0" Click="BtnAddMacro_Click"/>
+                        <Button x:Name="btnDeleteMacro" Content="Delete" Width="60" Click="BtnDeleteMacro_Click"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Grid.RowSpan="3">
+                        <TextBlock Text="Title:" FontWeight="Bold"/>
+                        <TextBox x:Name="txtMacroTitle" Margin="0,5,0,10"/>
+                        <TextBlock Text="Code:" FontWeight="Bold"/>
+                        <TextBox x:Name="txtMacroCode" Height="300" AcceptsReturn="True" FontFamily="Consolas" VerticalScrollBarVisibility="Auto" Margin="0,5,0,0"/>
+                        <Button x:Name="btnSaveMacro" Content="Save Changes" HorizontalAlignment="Right" Margin="0,10,0,0" Width="100" Click="BtnSaveMacro_Click"/>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <!-- LLM Management -->
+            <TabItem Header="LLM Management">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="5">
+                        <!-- Local Detection -->
+                        <GroupBox Header="Local Model Detection" Margin="0,0,0,10">
+                            <StackPanel Orientation="Horizontal" Margin="5">
+                                <Button x:Name="btnDetectModels" Content="Detect Local Models (Ollama/LMStudio)" Padding="5" Click="BtnDetectModels_Click"/>
+                                <TextBlock x:Name="lblDetectionStatus" Text="" VerticalAlignment="Center" Margin="10,0,0,0" Foreground="Gray"/>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <!-- Mode Toggle -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <TextBlock Text="Mode:" VerticalAlignment="Center" FontWeight="Bold" Margin="0,0,10,0"/>
+                            <RadioButton x:Name="rbSimple" Content="Simple Settings" GroupName="Mode" IsChecked="True" Checked="Mode_Checked"/>
+                            <RadioButton x:Name="rbAdvanced" Content="Advanced Settings" GroupName="Mode" Margin="10,0,0,0" Checked="Mode_Checked"/>
+                        </StackPanel>
+
+                        <!-- Simple Settings -->
+                        <GroupBox x:Name="grpSimple" Header="Simple Settings" Margin="0,0,0,10">
+                            <StackPanel Margin="5">
+                                <TextBlock Text="⚠️ Note: This mode handles both vision and text tasks. Please use a Multimodal model (e.g., gpt-4o, llava)." Foreground="OrangeRed" TextWrapping="Wrap" Margin="0,0,0,10" FontSize="11"/>
+                                <TextBlock Text="Provider:" Margin="0,5,0,0"/>
+                                <ComboBox x:Name="cmbSimpleProvider" SelectionChanged="CmbSimpleProvider_SelectionChanged">
+                                    <ComboBoxItem Content="OpenAI"/>
+                                    <ComboBoxItem Content="Ollama"/>
+                                    <ComboBoxItem Content="LMStudio"/>
+                                </ComboBox>
+                                
+                                <TextBlock Text="API URL:" Margin="0,5,0,0"/>
+                                <TextBox x:Name="txtSimpleApiUrl"/>
+                                
+                                <TextBlock Text="API Key:" Margin="0,5,0,0"/>
+                                <TextBox x:Name="txtSimpleApiKey"/>
+                                
+                                <TextBlock Text="Model:" Margin="0,5,0,0"/>
+                                <TextBox x:Name="txtSimpleModel"/>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <!-- Advanced Settings -->
+                        <StackPanel x:Name="pnlAdvanced" Visibility="Collapsed">
+                            <!-- Header Detection -->
+                            <GroupBox Header="Header Detection (表头勘测)" Margin="0,0,0,10">
+                                <StackPanel Margin="5">
+                                    <TextBlock Text="⚠️ Requires Multimodal Model (Vision capable)" Foreground="OrangeRed" FontSize="10" Margin="0,0,0,5"/>
+                                    <TextBlock Text="Provider:"/>
+                                    <ComboBox x:Name="cmbHeaderProvider" SelectionChanged="CmbAdvancedProvider_SelectionChanged" Tag="Header">
+                                        <ComboBoxItem Content="OpenAI"/>
+                                        <ComboBoxItem Content="Ollama"/>
+                                        <ComboBoxItem Content="LMStudio"/>
+                                    </ComboBox>
+                                    <Grid Margin="0,5,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Margin="0,0,5,0">
+                                            <TextBlock Text="API URL:"/>
+                                            <TextBox x:Name="txtHeaderApiUrl"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Margin="0,0,5,0">
+                                            <TextBlock Text="API Key:"/>
+                                            <TextBox x:Name="txtHeaderApiKey"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Model:"/>
+                                            <TextBox x:Name="txtHeaderModel"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </GroupBox>
+
+                            <!-- Data Write -->
+                            <GroupBox Header="Data Write (数据写入)" Margin="0,0,0,10">
+                                <StackPanel Margin="5">
+                                    <TextBlock Text="⚠️ Requires Multimodal Model (Vision capable)" Foreground="OrangeRed" FontSize="10" Margin="0,0,0,5"/>
+                                    <TextBlock Text="Provider:"/>
+                                    <ComboBox x:Name="cmbWriteProvider" SelectionChanged="CmbAdvancedProvider_SelectionChanged" Tag="Write">
+                                        <ComboBoxItem Content="OpenAI"/>
+                                        <ComboBoxItem Content="Ollama"/>
+                                        <ComboBoxItem Content="LMStudio"/>
+                                    </ComboBox>
+                                    <Grid Margin="0,5,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Margin="0,0,5,0">
+                                            <TextBlock Text="API URL:"/>
+                                            <TextBox x:Name="txtWriteApiUrl"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Margin="0,0,5,0">
+                                            <TextBlock Text="API Key:"/>
+                                            <TextBox x:Name="txtWriteApiKey"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Model:"/>
+                                            <TextBox x:Name="txtWriteModel"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </GroupBox>
+
+                            <!-- Data OP -->
+                            <GroupBox Header="Data Operation (数据操作)" Margin="0,0,0,10">
+                                <StackPanel Margin="5">
+                                    <TextBlock Text="ℹ️ Text-only model is sufficient (Code Generation)" Foreground="Gray" FontSize="10" Margin="0,0,0,5"/>
+                                    <TextBlock Text="Provider:"/>
+                                    <ComboBox x:Name="cmbOpProvider" SelectionChanged="CmbAdvancedProvider_SelectionChanged" Tag="Op">
+                                        <ComboBoxItem Content="OpenAI"/>
+                                        <ComboBoxItem Content="Ollama"/>
+                                        <ComboBoxItem Content="LMStudio"/>
+                                    </ComboBox>
+                                    <Grid Margin="0,5,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Margin="0,0,5,0">
+                                            <TextBlock Text="API URL:"/>
+                                            <TextBox x:Name="txtOpApiUrl"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Margin="0,0,5,0">
+                                            <TextBlock Text="API Key:"/>
+                                            <TextBox x:Name="txtOpApiKey"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Model:"/>
+                                            <TextBox x:Name="txtOpModel"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </GroupBox>
+
+                            <!-- VBA Self-healing -->
+                            <GroupBox Header="VBA Environment Detection &amp; Self-healing" Margin="0,0,0,10">
+                                <StackPanel Margin="5">
+                                    <TextBlock Text="ℹ️ Text-only model is sufficient" Foreground="Gray" FontSize="10" Margin="0,0,0,5"/>
+                                    <TextBlock Text="Provider:"/>
+                                    <ComboBox x:Name="cmbVbaProvider" SelectionChanged="CmbAdvancedProvider_SelectionChanged" Tag="Vba">
+                                        <ComboBoxItem Content="OpenAI"/>
+                                        <ComboBoxItem Content="Ollama"/>
+                                        <ComboBoxItem Content="LMStudio"/>
+                                    </ComboBox>
+                                    <Grid Margin="0,5,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Margin="0,0,5,0">
+                                            <TextBlock Text="API URL:"/>
+                                            <TextBox x:Name="txtVbaApiUrl"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Margin="0,0,5,0">
+                                            <TextBlock Text="API Key:"/>
+                                            <TextBox x:Name="txtVbaApiKey"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Model:"/>
+                                            <TextBox x:Name="txtVbaModel"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </GroupBox>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button x:Name="btnOk" Content="OK" Width="80" Margin="0,0,10,0" Click="BtnOk_Click"/>
+            <Button x:Name="btnCancel" Content="Cancel" Width="80" Click="BtnCancel_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

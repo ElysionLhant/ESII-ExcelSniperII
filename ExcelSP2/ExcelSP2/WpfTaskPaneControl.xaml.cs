@@ -30,6 +30,7 @@ namespace ExcelSP2
         private string promptsFilePath;
         private string macrosFilePath;
         private string settingsFilePath;
+        private AppSettings currentSettings;
 
         public WpfTaskPaneControl()
         {
@@ -49,6 +50,11 @@ namespace ExcelSP2
             if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
             promptsFilePath = Path.Combine(folder, "prompts.json");
 
+            LoadPrompts();
+        }
+
+        private void LoadPrompts()
+        {
             if (File.Exists(promptsFilePath))
             {
                 try
@@ -80,6 +86,11 @@ namespace ExcelSP2
             if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
             macrosFilePath = Path.Combine(folder, "macros.json");
 
+            LoadMacros();
+        }
+
+        private void LoadMacros()
+        {
             if (File.Exists(macrosFilePath))
             {
                 try
@@ -109,21 +120,29 @@ namespace ExcelSP2
             if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
             settingsFilePath = Path.Combine(folder, "settings.json");
 
+            LoadSettings();
+        }
+
+        private void LoadSettings()
+        {
             if (File.Exists(settingsFilePath))
             {
                 try
                 {
                     string json = File.ReadAllText(settingsFilePath);
                     var serializer = new JavaScriptSerializer();
-                    var settings = serializer.Deserialize<AppSettings>(json);
-                    if (settings != null)
-                    {
-                        txtApiUrl.Text = settings.ApiUrl;
-                        txtApiKey.Text = settings.ApiKey;
-                        txtModel.Text = settings.Model;
-                    }
+                    currentSettings = serializer.Deserialize<AppSettings>(json);
                 }
                 catch { }
+            }
+            
+            if (currentSettings == null)
+            {
+                currentSettings = new AppSettings 
+                { 
+                    ApiUrl = "https://api.openai.com/v1", 
+                    Model = "gpt-4o" 
+                };
             }
         }
 
@@ -457,27 +476,39 @@ namespace ExcelSP2
 
         private void BtnSettings_Click(object sender, RoutedEventArgs e)
         {
-            pnlSettings.Visibility = pnlSettings.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
-        }
-
-        private void BtnSaveSettings_Click(object sender, RoutedEventArgs e)
-        {
-            SaveSettings();
-            pnlSettings.Visibility = Visibility.Collapsed;
-        }
-
-        private void SaveSettings()
-        {
-            var settings = new AppSettings
+            var settingsWindow = new SettingsWindow(promptsFilePath, macrosFilePath, settingsFilePath);
+            settingsWindow.SettingsSaved += () =>
             {
-                ApiUrl = txtApiUrl.Text,
-                ApiKey = txtApiKey.Text,
-                Model = txtModel.Text
+                LoadSettings();
+                LoadPrompts();
+                LoadMacros();
             };
-            var serializer = new JavaScriptSerializer();
-            string json = serializer.Serialize(settings);
-            File.WriteAllText(settingsFilePath, json);
-            MessageBox.Show("Settings saved!");
+            settingsWindow.ShowDialog();
+        }
+
+        private LLMConfig GetConfig(string type)
+        {
+            if (currentSettings == null) LoadSettings();
+
+            if (!currentSettings.IsAdvancedMode)
+            {
+                return new LLMConfig 
+                { 
+                    Provider = currentSettings.Model?.Contains("gpt") == true ? "OpenAI" : "Ollama", 
+                    ApiUrl = currentSettings.ApiUrl, 
+                    ApiKey = currentSettings.ApiKey, 
+                    Model = currentSettings.Model 
+                };
+            }
+
+            switch (type)
+            {
+                case "Header": return currentSettings.HeaderDetectionLLM;
+                case "Write": return currentSettings.DataWriteLLM;
+                case "Op": return currentSettings.DataOpLLM;
+                case "Vba": return currentSettings.VBASelfHealingLLM;
+                default: return null;
+            }
         }
 
         private void ToggleMode_Checked(object sender, RoutedEventArgs e)
@@ -494,27 +525,25 @@ namespace ExcelSP2
 
         private async void BtnRun_Click(object sender, RoutedEventArgs e)
         {
-            string apiKey = txtApiKey.Text;
-            string apiUrl = txtApiUrl.Text;
-            string model = txtModel.Text;
             string prompt = txtPrompt.Text;
             string manualContext = txtContext.Text;
 
             System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
 
-            if (string.IsNullOrEmpty(apiKey))
-            {
-                MessageBox.Show("Please set API Key in Settings.");
-                pnlSettings.Visibility = Visibility.Visible;
-                return;
-            }
-
             if (toggleMode.IsChecked == true)
             {
+                // Data Op Mode
+                var config = GetConfig("Op");
+                if (string.IsNullOrEmpty(config.ApiKey) && config.Provider == "OpenAI")
+                {
+                    MessageBox.Show("Please set API Key in Settings.");
+                    return;
+                }
+
                 btnRun.IsEnabled = false;
                 try
                 {
-                    await RunDataMode(apiKey, apiUrl, model, prompt, manualContext);
+                    await RunDataMode(config, prompt, manualContext);
                 }
                 catch (Exception ex)
                 {
@@ -525,6 +554,14 @@ namespace ExcelSP2
                     btnRun.IsEnabled = true;
                     lblStatus.Text = "Ready";
                 }
+                return;
+            }
+
+            // Data Write Mode
+            var writeConfig = GetConfig("Write");
+            if (string.IsNullOrEmpty(writeConfig.ApiKey) && writeConfig.Provider == "OpenAI")
+            {
+                MessageBox.Show("Please set API Key in Settings.");
                 return;
             }
 
@@ -543,9 +580,10 @@ namespace ExcelSP2
 
                 if (cachedHeaderInfo == null)
                 {
+                    var headerConfig = GetConfig("Header");
                     isNewHeaderDetection = true;
                     lblStatus.Text = "Detecting Header...";
-                    cachedHeaderInfo = await DetectHeader(capturedImageBase64, apiUrl, apiKey, model);
+                    cachedHeaderInfo = await DetectHeader(capturedImageBase64, headerConfig);
                     
                     Excel.Range rangeForCache = Globals.ThisAddIn.Application.Range[capturedAddress];
                     cachedColumnRange = GetColumnRangeKey(rangeForCache);
@@ -653,7 +691,7 @@ namespace ExcelSP2
 
                 var requestBody = new
                 {
-                    model = model,
+                    model = writeConfig.Model,
                     messages = messages,
                     max_tokens = 16384,
                     temperature = 0.1
@@ -664,13 +702,14 @@ namespace ExcelSP2
                 using (HttpClient client = new HttpClient())
                 {
                     client.Timeout = TimeSpan.FromMinutes(2);
-                    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
+                    if (!string.IsNullOrEmpty(writeConfig.ApiKey))
+                        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {writeConfig.ApiKey}");
 
                     var serializer = new JavaScriptSerializer();
                     string json = serializer.Serialize(requestBody);
                     var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                    var response = await client.PostAsync($"{apiUrl}/chat/completions", content);
+                    var response = await client.PostAsync($"{writeConfig.ApiUrl}/chat/completions", content);
                     string responseString = await response.Content.ReadAsStringAsync();
 
                     if (!response.IsSuccessStatusCode)
@@ -748,7 +787,7 @@ namespace ExcelSP2
             return $"{startCol}-{endCol}";
         }
 
-        private async Task<HeaderInfo> DetectHeader(string imageBase64, string apiUrl, string apiKey, string model)
+        private async Task<HeaderInfo> DetectHeader(string imageBase64, LLMConfig config)
         {
             var messages = new List<object>
             {
@@ -761,7 +800,7 @@ namespace ExcelSP2
 
             var requestBody = new
             {
-                model = model,
+                model = config.Model,
                 messages = messages,
                 max_tokens = 4096,
                 temperature = 0.0,
@@ -771,13 +810,14 @@ namespace ExcelSP2
             using (HttpClient client = new HttpClient())
             {
                 client.Timeout = TimeSpan.FromMinutes(1);
-                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
+                if (!string.IsNullOrEmpty(config.ApiKey))
+                    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {config.ApiKey}");
 
                 var serializer = new JavaScriptSerializer();
                 string json = serializer.Serialize(requestBody);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                var response = await client.PostAsync($"{apiUrl}/chat/completions", content);
+                var response = await client.PostAsync($"{config.ApiUrl}/chat/completions", content);
                 string responseString = await response.Content.ReadAsStringAsync();
 
                 if (!response.IsSuccessStatusCode)
@@ -790,7 +830,7 @@ namespace ExcelSP2
             }
         }
 
-        private async Task RunDataMode(string apiKey, string apiUrl, string model, string prompt, string manualContext)
+        private async Task RunDataMode(LLMConfig config, string prompt, string manualContext)
         {
             Excel.Range range = Globals.ThisAddIn.Application.Selection as Excel.Range;
             if (range == null)
@@ -838,7 +878,7 @@ namespace ExcelSP2
 
             var requestBody = new
             {
-                model = model,
+                model = config.Model,
                 messages = messages,
                 max_tokens = 4096,
                 temperature = 0.1
@@ -849,13 +889,14 @@ namespace ExcelSP2
             using (HttpClient client = new HttpClient())
             {
                 client.Timeout = TimeSpan.FromMinutes(2);
-                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
+                if (!string.IsNullOrEmpty(config.ApiKey))
+                    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {config.ApiKey}");
 
                 var serializer = new JavaScriptSerializer();
                 string json = serializer.Serialize(requestBody);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                var response = await client.PostAsync($"{apiUrl}/chat/completions", content);
+                var response = await client.PostAsync($"{config.ApiUrl}/chat/completions", content);
                 string responseString = await response.Content.ReadAsStringAsync();
 
                 if (!response.IsSuccessStatusCode)
