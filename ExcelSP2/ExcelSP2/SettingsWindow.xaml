@@ -3,8 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:properties="clr-namespace:ExcelSP2.Properties"
         mc:Ignorable="d"
-        Title="Settings" Height="600" Width="800" WindowStartupLocation="CenterScreen">
+        Title="{x:Static properties:Resources.Settings}" Height="600" Width="800" WindowStartupLocation="CenterScreen">
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
@@ -13,7 +14,7 @@
 
         <TabControl Grid.Row="0">
             <!-- Prompt Management -->
-            <TabItem Header="Prompt Management">
+            <TabItem Header="{x:Static properties:Resources.PromptManagement}">
                 <Grid Margin="5">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="200"/>
@@ -25,26 +26,26 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Text="Prompts:" FontWeight="Bold" Margin="0,0,0,5"/>
+                    <TextBlock Text="{x:Static properties:Resources.Prompts}" FontWeight="Bold" Margin="0,0,0,5"/>
                     <ListBox x:Name="lstPrompts" Grid.Row="1" Margin="0,0,5,0" DisplayMemberPath="Title" SelectionChanged="LstPrompts_SelectionChanged"/>
                     
                     <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,5,5,0">
-                        <Button x:Name="btnAddPrompt" Content="Add" Width="60" Margin="0,0,5,0" Click="BtnAddPrompt_Click"/>
-                        <Button x:Name="btnDeletePrompt" Content="Delete" Width="60" Click="BtnDeletePrompt_Click"/>
+                        <Button x:Name="btnAddPrompt" Content="{x:Static properties:Resources.Add}" Width="60" Margin="0,0,5,0" Click="BtnAddPrompt_Click"/>
+                        <Button x:Name="btnDeletePrompt" Content="{x:Static properties:Resources.Delete}" Width="60" Click="BtnDeletePrompt_Click"/>
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Grid.RowSpan="3">
-                        <TextBlock Text="Title:" FontWeight="Bold"/>
+                        <TextBlock Text="{x:Static properties:Resources.Title}" FontWeight="Bold"/>
                         <TextBox x:Name="txtPromptTitle" Margin="0,5,0,10"/>
-                        <TextBlock Text="Content:" FontWeight="Bold"/>
+                        <TextBlock Text="{x:Static properties:Resources.Content}" FontWeight="Bold"/>
                         <TextBox x:Name="txtPromptContent" Height="300" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Margin="0,5,0,0"/>
-                        <Button x:Name="btnSavePrompt" Content="Save Changes" HorizontalAlignment="Right" Margin="0,10,0,0" Width="100" Click="BtnSavePrompt_Click"/>
+                        <Button x:Name="btnSavePrompt" Content="{x:Static properties:Resources.SaveChanges}" HorizontalAlignment="Right" Margin="0,10,0,0" Width="100" Click="BtnSavePrompt_Click"/>
                     </StackPanel>
                 </Grid>
             </TabItem>
 
             <!-- VBA Macro Management -->
-            <TabItem Header="VBA Macro Management">
+            <TabItem Header="{x:Static properties:Resources.VBAMacroManagement}">
                 <Grid Margin="5">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="200"/>
@@ -58,66 +59,67 @@
                         <RowDefinition Height="1*"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Text="Local Macros:" FontWeight="Bold" Margin="0,0,0,5"/>
+                    <TextBlock Text="{x:Static properties:Resources.LocalMacros}" FontWeight="Bold" Margin="0,0,0,5"/>
                     <ListBox x:Name="lstMacros" Grid.Row="1" Margin="0,0,5,0" DisplayMemberPath="Title" SelectionChanged="LstMacros_SelectionChanged"/>
 
                     <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,5,5,10">
-                        <Button x:Name="btnAddMacro" Content="Add" Width="60" Margin="0,0,5,0" Click="BtnAddMacro_Click"/>
-                        <Button x:Name="btnDeleteMacro" Content="Delete" Width="60" Click="BtnDeleteMacro_Click"/>
+                        <Button x:Name="btnAddMacro" Content="{x:Static properties:Resources.Add}" Width="60" Margin="0,0,5,0" Click="BtnAddMacro_Click"/>
+                        <Button x:Name="btnDeleteMacro" Content="{x:Static properties:Resources.Delete}" Width="60" Click="BtnDeleteMacro_Click"/>
+                        <Button x:Name="btnImportMacro" Content="{x:Static properties:Resources.Import}" Width="60" Margin="5,0,0,0" Click="BtnImportMacro_Click"/>
                     </StackPanel>
 
-                    <TextBlock Grid.Row="3" Text="In-File Macros:" FontWeight="Bold" Margin="0,0,0,5"/>
+                    <TextBlock Grid.Row="3" Text="{x:Static properties:Resources.InFileMacros}" FontWeight="Bold" Margin="0,0,0,5"/>
                     <ListBox x:Name="lstInFileMacros" Grid.Row="4" Margin="0,0,5,0" DisplayMemberPath="Title" SelectionChanged="LstInFileMacros_SelectionChanged"/>
 
                     <StackPanel Grid.Column="1" Grid.RowSpan="5">
-                        <TextBlock Text="Title:" FontWeight="Bold"/>
+                        <TextBlock Text="{x:Static properties:Resources.Title}" FontWeight="Bold"/>
                         <TextBox x:Name="txtMacroTitle" Margin="0,5,0,10"/>
-                        <TextBlock Text="Code:" FontWeight="Bold"/>
+                        <TextBlock Text="{x:Static properties:Resources.Code}" FontWeight="Bold"/>
                         <TextBox x:Name="txtMacroCode" Height="300" AcceptsReturn="True" FontFamily="Consolas" VerticalScrollBarVisibility="Auto" Margin="0,5,0,0"/>
-                        <Button x:Name="btnSaveMacro" Content="Save Changes" HorizontalAlignment="Right" Margin="0,10,0,0" Width="100" Click="BtnSaveMacro_Click"/>
+                        <Button x:Name="btnSaveMacro" Content="{x:Static properties:Resources.SaveChanges}" HorizontalAlignment="Right" Margin="0,10,0,0" Width="100" Click="BtnSaveMacro_Click"/>
                     </StackPanel>
                 </Grid>
             </TabItem>
 
             <!-- LLM Management -->
-            <TabItem Header="LLM Management">
+            <TabItem Header="{x:Static properties:Resources.LLMManagement}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="5">
                         <!-- Local Detection -->
-                        <GroupBox Header="Local Model Detection" Margin="0,0,0,10">
+                        <GroupBox Header="{x:Static properties:Resources.LocalModelDetection}" Margin="0,0,0,10">
                             <StackPanel Orientation="Horizontal" Margin="5">
-                                <Button x:Name="btnDetectModels" Content="Detect Local Models (Ollama/LM Studio)" Padding="5" Click="BtnDetectModels_Click"/>
+                                <Button x:Name="btnDetectModels" Content="{x:Static properties:Resources.DetectLocalModels}" Padding="5" Click="BtnDetectModels_Click"/>
                                 <TextBlock x:Name="lblDetectionStatus" Text="" VerticalAlignment="Center" Margin="10,0,0,0" Foreground="Gray"/>
                             </StackPanel>
                         </GroupBox>
 
                         <!-- Mode Toggle -->
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                            <TextBlock Text="Mode:" VerticalAlignment="Center" FontWeight="Bold" Margin="0,0,10,0"/>
-                            <RadioButton x:Name="rbSimple" Content="Simple Settings" GroupName="Mode" IsChecked="True" Checked="Mode_Checked"/>
-                            <RadioButton x:Name="rbAdvanced" Content="Advanced Settings" GroupName="Mode" Margin="10,0,0,0" Checked="Mode_Checked"/>
+                            <TextBlock Text="{x:Static properties:Resources.Mode}" VerticalAlignment="Center" FontWeight="Bold" Margin="0,0,10,0"/>
+                            <RadioButton x:Name="rbSimple" Content="{x:Static properties:Resources.SimpleSettings}" GroupName="Mode" IsChecked="True" Checked="Mode_Checked"/>
+                            <RadioButton x:Name="rbAdvanced" Content="{x:Static properties:Resources.AdvancedSettings}" GroupName="Mode" Margin="10,0,0,0" Checked="Mode_Checked"/>
                         </StackPanel>
 
                         <!-- Simple Settings -->
-                        <GroupBox x:Name="grpSimple" Header="Simple Settings" Margin="0,0,0,10">
+                        <GroupBox x:Name="grpSimple" Header="{x:Static properties:Resources.SimpleSettings}" Margin="0,0,0,10">
                             <StackPanel Margin="5">
-                                <TextBlock Text="⚠️ Note: This mode handles both vision and text tasks. Please use a Multimodal model (e.g., gpt-4o, llava)." Foreground="OrangeRed" TextWrapping="Wrap" Margin="0,0,0,10" FontSize="11"/>
-                                <TextBlock Text="Provider:" Margin="0,5,0,0"/>
+                                <TextBlock Text="{x:Static properties:Resources.SimpleModeNote}" Foreground="OrangeRed" TextWrapping="Wrap" Margin="0,0,0,10" FontSize="11"/>
+                                <TextBlock Text="{x:Static properties:Resources.Provider}" Margin="0,5,0,0"/>
                                 <ComboBox x:Name="cmbSimpleProvider" SelectionChanged="CmbSimpleProvider_SelectionChanged">
                                     <ComboBoxItem Content="Custom (OpenAI Compatible)"/>
                                     <ComboBoxItem Content="Ollama"/>
                                     <ComboBoxItem Content="LM Studio"/>
                                 </ComboBox>
                                 
-                                <TextBlock Text="API URL:" Margin="0,5,0,0"/>
+                                <TextBlock Text="{x:Static properties:Resources.ApiUrl}" Margin="0,5,0,0"/>
                                 <TextBox x:Name="txtSimpleApiUrl"/>
                                 
                                 <StackPanel x:Name="pnlSimpleApiKey">
-                                    <TextBlock Text="API Key:" Margin="0,5,0,0"/>
+                                    <TextBlock Text="{x:Static properties:Resources.ApiKey}" Margin="0,5,0,0"/>
                                     <TextBox x:Name="txtSimpleApiKey"/>
                                 </StackPanel>
                                 
-                                <TextBlock Text="Model:" Margin="0,5,0,0"/>
+                                <TextBlock Text="{x:Static properties:Resources.Model}" Margin="0,5,0,0"/>
                                 <ComboBox x:Name="cmbSimpleModel" IsEditable="True"/>
                             </StackPanel>
                         </GroupBox>
@@ -125,10 +127,10 @@
                         <!-- Advanced Settings -->
                         <StackPanel x:Name="pnlAdvanced" Visibility="Collapsed">
                             <!-- Header Detection -->
-                            <GroupBox Header="Header Detection (表头勘测)" Margin="0,0,0,10">
+                            <GroupBox Header="{x:Static properties:Resources.HeaderDetection}" Margin="0,0,0,10">
                                 <StackPanel Margin="5">
-                                    <TextBlock Text="⚠️ Requires Multimodal Model (Vision capable)" Foreground="OrangeRed" FontSize="10" Margin="0,0,0,5"/>
-                                    <TextBlock Text="Provider:"/>
+                                    <TextBlock Text="{x:Static properties:Resources.RequiresMultimodal}" Foreground="OrangeRed" FontSize="10" Margin="0,0,0,5"/>
+                                    <TextBlock Text="{x:Static properties:Resources.Provider}"/>
                                     <ComboBox x:Name="cmbHeaderProvider" SelectionChanged="CmbAdvancedProvider_SelectionChanged" Tag="Header">
                                         <ComboBoxItem Content="Custom (OpenAI Compatible)"/>
                                         <ComboBoxItem Content="Ollama"/>
@@ -141,15 +143,15 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Grid.Column="0" Margin="0,0,5,0">
-                                            <TextBlock Text="API URL:"/>
+                                            <TextBlock Text="{x:Static properties:Resources.ApiUrl}"/>
                                             <TextBox x:Name="txtHeaderApiUrl"/>
                                         </StackPanel>
                                         <StackPanel x:Name="pnlHeaderApiKey" Grid.Column="1" Margin="0,0,5,0">
-                                            <TextBlock Text="API Key:"/>
+                                            <TextBlock Text="{x:Static properties:Resources.ApiKey}"/>
                                             <TextBox x:Name="txtHeaderApiKey"/>
                                         </StackPanel>
                                         <StackPanel Grid.Column="2">
-                                            <TextBlock Text="Model:"/>
+                                            <TextBlock Text="{x:Static properties:Resources.Model}"/>
                                             <ComboBox x:Name="cmbHeaderModel" IsEditable="True"/>
                                         </StackPanel>
                                     </Grid>
@@ -157,10 +159,10 @@
                             </GroupBox>
 
                             <!-- Data Write -->
-                            <GroupBox Header="Data Write (数据写入)" Margin="0,0,0,10">
+                            <GroupBox Header="{x:Static properties:Resources.DataWriteSection}" Margin="0,0,0,10">
                                 <StackPanel Margin="5">
-                                    <TextBlock Text="⚠️ Requires Multimodal Model (Vision capable)" Foreground="OrangeRed" FontSize="10" Margin="0,0,0,5"/>
-                                    <TextBlock Text="Provider:"/>
+                                    <TextBlock Text="{x:Static properties:Resources.RequiresMultimodal}" Foreground="OrangeRed" FontSize="10" Margin="0,0,0,5"/>
+                                    <TextBlock Text="{x:Static properties:Resources.Provider}"/>
                                     <ComboBox x:Name="cmbWriteProvider" SelectionChanged="CmbAdvancedProvider_SelectionChanged" Tag="Write">
                                         <ComboBoxItem Content="Custom (OpenAI Compatible)"/>
                                         <ComboBoxItem Content="Ollama"/>
@@ -173,15 +175,15 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Grid.Column="0" Margin="0,0,5,0">
-                                            <TextBlock Text="API URL:"/>
+                                            <TextBlock Text="{x:Static properties:Resources.ApiUrl}"/>
                                             <TextBox x:Name="txtWriteApiUrl"/>
                                         </StackPanel>
                                         <StackPanel x:Name="pnlWriteApiKey" Grid.Column="1" Margin="0,0,5,0">
-                                            <TextBlock Text="API Key:"/>
+                                            <TextBlock Text="{x:Static properties:Resources.ApiKey}"/>
                                             <TextBox x:Name="txtWriteApiKey"/>
                                         </StackPanel>
                                         <StackPanel Grid.Column="2">
-                                            <TextBlock Text="Model:"/>
+                                            <TextBlock Text="{x:Static properties:Resources.Model}"/>
                                             <ComboBox x:Name="cmbWriteModel" IsEditable="True"/>
                                         </StackPanel>
                                     </Grid>
@@ -189,10 +191,10 @@
                             </GroupBox>
 
                             <!-- Data OP -->
-                            <GroupBox Header="Data Operation (数据操作)" Margin="0,0,0,10">
+                            <GroupBox Header="{x:Static properties:Resources.DataOperation}" Margin="0,0,0,10">
                                 <StackPanel Margin="5">
-                                    <TextBlock Text="ℹ️ Text-only model is sufficient (Code Generation)" Foreground="Gray" FontSize="10" Margin="0,0,0,5"/>
-                                    <TextBlock Text="Provider:"/>
+                                    <TextBlock Text="{x:Static properties:Resources.TextOnlySufficient}" Foreground="Gray" FontSize="10" Margin="0,0,0,5"/>
+                                    <TextBlock Text="{x:Static properties:Resources.Provider}"/>
                                     <ComboBox x:Name="cmbOpProvider" SelectionChanged="CmbAdvancedProvider_SelectionChanged" Tag="Op">
                                         <ComboBoxItem Content="Custom (OpenAI Compatible)"/>
                                         <ComboBoxItem Content="Ollama"/>
@@ -205,15 +207,15 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Grid.Column="0" Margin="0,0,5,0">
-                                            <TextBlock Text="API URL:"/>
+                                            <TextBlock Text="{x:Static properties:Resources.ApiUrl}"/>
                                             <TextBox x:Name="txtOpApiUrl"/>
                                         </StackPanel>
                                         <StackPanel x:Name="pnlOpApiKey" Grid.Column="1" Margin="0,0,5,0">
-                                            <TextBlock Text="API Key:"/>
+                                            <TextBlock Text="{x:Static properties:Resources.ApiKey}"/>
                                             <TextBox x:Name="txtOpApiKey"/>
                                         </StackPanel>
                                         <StackPanel Grid.Column="2">
-                                            <TextBlock Text="Model:"/>
+                                            <TextBlock Text="{x:Static properties:Resources.Model}"/>
                                             <ComboBox x:Name="cmbOpModel" IsEditable="True"/>
                                         </StackPanel>
                                     </Grid>
@@ -221,10 +223,10 @@
                             </GroupBox>
 
                             <!-- VBA Self-healing -->
-                            <GroupBox Header="VBA Environment Detection &amp; Self-healing" Margin="0,0,0,10">
+                            <GroupBox Header="{x:Static properties:Resources.VBAEnvironmentDetection}" Margin="0,0,0,10">
                                 <StackPanel Margin="5">
-                                    <TextBlock Text="ℹ️ Text-only model is sufficient" Foreground="Gray" FontSize="10" Margin="0,0,0,5"/>
-                                    <TextBlock Text="Provider:"/>
+                                    <TextBlock Text="{x:Static properties:Resources.TextOnlySufficientSimple}" Foreground="Gray" FontSize="10" Margin="0,0,0,5"/>
+                                    <TextBlock Text="{x:Static properties:Resources.Provider}"/>
                                     <ComboBox x:Name="cmbVbaProvider" SelectionChanged="CmbAdvancedProvider_SelectionChanged" Tag="Vba">
                                         <ComboBoxItem Content="Custom (OpenAI Compatible)"/>
                                         <ComboBoxItem Content="Ollama"/>
@@ -237,15 +239,15 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Grid.Column="0" Margin="0,0,5,0">
-                                            <TextBlock Text="API URL:"/>
+                                            <TextBlock Text="{x:Static properties:Resources.ApiUrl}"/>
                                             <TextBox x:Name="txtVbaApiUrl"/>
                                         </StackPanel>
                                         <StackPanel x:Name="pnlVbaApiKey" Grid.Column="1" Margin="0,0,5,0">
-                                            <TextBlock Text="API Key:"/>
+                                            <TextBlock Text="{x:Static properties:Resources.ApiKey}"/>
                                             <TextBox x:Name="txtVbaApiKey"/>
                                         </StackPanel>
                                         <StackPanel Grid.Column="2">
-                                            <TextBlock Text="Model:"/>
+                                            <TextBlock Text="{x:Static properties:Resources.Model}"/>
                                             <ComboBox x:Name="cmbVbaModel" IsEditable="True"/>
                                         </StackPanel>
                                     </Grid>
@@ -258,8 +260,8 @@
         </TabControl>
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-            <Button x:Name="btnOk" Content="OK" Width="80" Margin="0,0,10,0" Click="BtnOk_Click"/>
-            <Button x:Name="btnCancel" Content="Cancel" Width="80" Click="BtnCancel_Click"/>
+            <Button x:Name="btnOk" Content="{x:Static properties:Resources.OK}" Width="80" Margin="0,0,10,0" Click="BtnOk_Click"/>
+            <Button x:Name="btnCancel" Content="{x:Static properties:Resources.Cancel}" Width="80" Click="BtnCancel_Click"/>
         </StackPanel>
     </Grid>
 </Window>

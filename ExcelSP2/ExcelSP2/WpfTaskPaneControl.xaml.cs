@@ -34,6 +34,17 @@ namespace ExcelSP2
 
         public WpfTaskPaneControl()
         {
+            // Set culture based on system
+            var culture = System.Globalization.CultureInfo.CurrentUICulture;
+            if (culture.Name.StartsWith("zh"))
+            {
+                Properties.Resources.Culture = new System.Globalization.CultureInfo("zh-CN");
+            }
+            else
+            {
+                Properties.Resources.Culture = System.Globalization.CultureInfo.InvariantCulture;
+            }
+
             InitializeComponent();
             itemsAttachments.ItemsSource = attachments;
             InitializePrompts();
@@ -156,12 +167,12 @@ namespace ExcelSP2
                 if (range == null) return;
 
                 capturedAddress = range.Address[false, false];
-                lblSelectionInfo.Text = $"Selected: {capturedAddress} ({range.Rows.Count}R x {range.Columns.Count}C)";
+                lblSelectionInfo.Text = string.Format(Properties.Resources.SelectedInfo, capturedAddress, range.Rows.Count, range.Columns.Count);
 
                 string currentColKey = GetColumnRangeKey(range);
                 if (cachedHeaderInfo != null && cachedColumnRange == currentColKey)
                 {
-                    lblSelectionInfo.Text += " [Header Cached]";
+                    lblSelectionInfo.Text += Properties.Resources.HeaderCached;
                     btnResetHeader.Visibility = Visibility.Visible;
                 }
                 else
@@ -573,7 +584,7 @@ namespace ExcelSP2
                 if (wb == null) return "No active workbook.";
 
                 StringBuilder sb = new StringBuilder();
-                sb.AppendLine($"Active Sheet Name: {wb.ActiveSheet.Name}");
+                sb.AppendLine($"Active Sheet Name: {((Excel.Worksheet)wb.ActiveSheet).Name}");
                 sb.Append("All Sheet Names: ");
                 foreach (Excel.Worksheet sheet in wb.Sheets)
                 {
@@ -816,7 +827,7 @@ namespace ExcelSP2
                     }
                 }
 
-                Excel.Worksheet sheet = Globals.ThisAddIn.Application.ActiveSheet;
+                Excel.Worksheet sheet = (Excel.Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
                 Excel.Range originalRange = sheet.Range[capturedAddress];
                 
                 int startRow = originalRange.Row;
@@ -1004,7 +1015,7 @@ namespace ExcelSP2
             if (dataRowCount > availableRows)
             {
                 int rowsToAdd = dataRowCount - availableRows;
-                Excel.Range lastRow = targetRange.Rows[targetRange.Rows.Count];
+                Excel.Range lastRow = (Excel.Range)targetRange.Rows[targetRange.Rows.Count];
                 Excel.Range insertRange = lastRow.Resize[rowsToAdd, targetRange.Columns.Count];
                 insertRange.Insert(Excel.XlInsertShiftDirection.xlShiftDown, Excel.XlInsertFormatOrigin.xlFormatFromLeftOrAbove);
                 
@@ -1012,7 +1023,7 @@ namespace ExcelSP2
                 targetRange = sheet.Range[targetRange.Cells[1, 1], targetRange.Cells[dataRowCount, targetRange.Columns.Count]];
             }
 
-            Excel.Range finalWriteRange = targetRange.Cells[1, 1].Resize[dataRowCount, dataColCount];
+            Excel.Range finalWriteRange = ((Excel.Range)targetRange.Cells[1, 1]).Resize[dataRowCount, dataColCount];
             finalWriteRange.Value2 = data;
             finalWriteRange.Select();
         }

@@ -15,8 +15,19 @@ namespace ExcelSP2
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
+            // Set culture based on system
+            var culture = System.Globalization.CultureInfo.CurrentUICulture;
+            if (culture.Name.StartsWith("zh"))
+            {
+                Properties.Resources.Culture = new System.Globalization.CultureInfo("zh-CN");
+            }
+            else
+            {
+                Properties.Resources.Culture = System.Globalization.CultureInfo.InvariantCulture;
+            }
+
             var taskPaneControl = new TaskPaneHostControl();
-            myTaskPane = this.CustomTaskPanes.Add(taskPaneControl, "Excel Sniper II");
+            myTaskPane = this.CustomTaskPanes.Add(taskPaneControl, Properties.Resources.AppTitle);
             myTaskPane.Width = 320;
             myTaskPane.Visible = true;
         }

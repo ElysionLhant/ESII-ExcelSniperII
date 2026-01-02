@@ -881,7 +881,7 @@ namespace ExcelSP2
                 }
 
                 // Step 2: Adjust Selection Range
-                Excel.Worksheet sheet = Globals.ThisAddIn.Application.ActiveSheet;
+                Excel.Worksheet sheet = (Excel.Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
                 Excel.Range originalRange = sheet.Range[capturedAddress];
                 
                 int startRow = originalRange.Row;
@@ -1073,7 +1073,7 @@ namespace ExcelSP2
                 
                 // Insert rows starting from the last row of the target range
                 // We use the last row as the anchor to insert below/at
-                Excel.Range lastRow = targetRange.Rows[targetRange.Rows.Count];
+                Excel.Range lastRow = (Excel.Range)targetRange.Rows[targetRange.Rows.Count];
                 
                 // Resize to cover the number of rows we need to add
                 Excel.Range insertRange = lastRow.Resize[rowsToAdd, targetRange.Columns.Count];
@@ -1089,7 +1089,7 @@ namespace ExcelSP2
 
             // Write data
             // We write to the top-left of the target range, resizing to match data dimensions
-            Excel.Range finalWriteRange = targetRange.Cells[1, 1].Resize[dataRowCount, dataColCount];
+            Excel.Range finalWriteRange = ((Excel.Range)targetRange.Cells[1, 1]).Resize[dataRowCount, dataColCount];
             finalWriteRange.Value2 = data;
             finalWriteRange.Select();
         }

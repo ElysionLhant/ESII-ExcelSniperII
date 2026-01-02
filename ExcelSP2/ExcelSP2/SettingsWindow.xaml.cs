@@ -295,6 +295,38 @@ namespace ExcelSP2
             }
         }
 
+        private void BtnImportMacro_Click(object sender, RoutedEventArgs e)
+        {
+            var openFileDialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "VBA Files|*.bas;*.txt;*.vba;*.cls;*.frm|All Files|*.*",
+                Title = "Import VBA Macro",
+                Multiselect = false
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    string filePath = openFileDialog.FileName;
+                    string content = File.ReadAllText(filePath);
+                    string title = Path.GetFileNameWithoutExtension(filePath);
+
+                    var newMacro = new MacroPreset { Title = title, Code = content };
+                    Macros.Add(newMacro);
+                    RefreshMacros();
+                    lstMacros.SelectedItem = newMacro;
+                    SaveMacrosToFile();
+                    
+                    MessageBox.Show("Macro imported successfully!", "Import", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error importing macro: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
         private void BtnSaveMacro_Click(object sender, RoutedEventArgs e)
         {
             if (lstMacros.SelectedItem is MacroPreset m)

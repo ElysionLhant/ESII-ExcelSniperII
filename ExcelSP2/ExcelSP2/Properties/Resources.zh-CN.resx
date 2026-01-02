@@ -13,160 +13,160 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="Selection" xml:space="preserve">
-    <value>Selection</value>
+    <value>选区</value>
   </data>
   <data name="Capture" xml:space="preserve">
-    <value>Capture</value>
+    <value>捕获</value>
   </data>
   <data name="Preview" xml:space="preserve">
-    <value>Preview</value>
+    <value>预览</value>
   </data>
   <data name="Reset" xml:space="preserve">
-    <value>Reset</value>
+    <value>重置</value>
   </data>
   <data name="NoSelectionCaptured" xml:space="preserve">
-    <value>No selection captured.</value>
+    <value>未捕获选区。</value>
   </data>
   <data name="ContextMaterials" xml:space="preserve">
-    <value>Context Materials</value>
+    <value>上下文资料</value>
   </data>
   <data name="PasteImagesText" xml:space="preserve">
-    <value>Paste images/text or drag files here.</value>
+    <value>粘贴图片/文本或拖拽文件到此处。</value>
   </data>
   <data name="Prompt" xml:space="preserve">
-    <value>Prompt</value>
+    <value>提示词</value>
   </data>
   <data name="Save" xml:space="preserve">
-    <value>Save</value>
+    <value>保存</value>
   </data>
   <data name="DataWrite" xml:space="preserve">
-    <value>Data Write</value>
+    <value>数据写入</value>
   </data>
   <data name="DataOp" xml:space="preserve">
-    <value>Data Op</value>
+    <value>数据操作</value>
   </data>
   <data name="ReferenceExistingData" xml:space="preserve">
-    <value>Reference Existing Data</value>
+    <value>参考现有数据</value>
   </data>
   <data name="MacroLibrary" xml:space="preserve">
-    <value>Macro Library</value>
+    <value>宏库</value>
   </data>
   <data name="Run" xml:space="preserve">
-    <value>Run</value>
+    <value>运行</value>
   </data>
   <data name="VBENote" xml:space="preserve">
-    <value>Note: If VBE window pops up on error, please close it manually to allow AI repair.</value>
+    <value>注意：如果 VBE 窗口因错误弹出，请手动关闭以允许 AI 修复。</value>
   </data>
   <data name="Settings" xml:space="preserve">
-    <value>Settings</value>
+    <value>设置</value>
   </data>
   <data name="GenerateAndFill" xml:space="preserve">
-    <value>Generate &amp; Fill</value>
+    <value>生成并填充</value>
   </data>
   <data name="Ready" xml:space="preserve">
-    <value>Ready</value>
+    <value>就绪</value>
   </data>
   <data name="PromptManagement" xml:space="preserve">
-    <value>Prompt Management</value>
+    <value>提示词管理</value>
   </data>
   <data name="Prompts" xml:space="preserve">
-    <value>Prompts:</value>
+    <value>提示词列表：</value>
   </data>
   <data name="Add" xml:space="preserve">
-    <value>Add</value>
+    <value>添加</value>
   </data>
   <data name="Delete" xml:space="preserve">
-    <value>Delete</value>
+    <value>删除</value>
   </data>
   <data name="Title" xml:space="preserve">
-    <value>Title:</value>
+    <value>标题：</value>
   </data>
   <data name="Content" xml:space="preserve">
-    <value>Content:</value>
+    <value>内容：</value>
   </data>
   <data name="SaveChanges" xml:space="preserve">
-    <value>Save Changes</value>
+    <value>保存更改</value>
   </data>
   <data name="VBAMacroManagement" xml:space="preserve">
-    <value>VBA Macro Management</value>
+    <value>VBA 宏管理</value>
   </data>
   <data name="LocalMacros" xml:space="preserve">
-    <value>Local Macros:</value>
+    <value>本地宏：</value>
   </data>
   <data name="Import" xml:space="preserve">
-    <value>Import</value>
+    <value>导入</value>
   </data>
   <data name="InFileMacros" xml:space="preserve">
-    <value>In-File Macros:</value>
+    <value>文件内宏：</value>
   </data>
   <data name="Code" xml:space="preserve">
-    <value>Code:</value>
+    <value>代码：</value>
   </data>
   <data name="LLMManagement" xml:space="preserve">
-    <value>LLM Management</value>
+    <value>LLM 管理</value>
   </data>
   <data name="LocalModelDetection" xml:space="preserve">
-    <value>Local Model Detection</value>
+    <value>本地模型检测</value>
   </data>
   <data name="DetectLocalModels" xml:space="preserve">
-    <value>Detect Local Models (Ollama/LM Studio)</value>
+    <value>检测本地模型 (Ollama/LM Studio)</value>
   </data>
   <data name="Mode" xml:space="preserve">
-    <value>Mode:</value>
+    <value>模式：</value>
   </data>
   <data name="SimpleSettings" xml:space="preserve">
-    <value>Simple Settings</value>
+    <value>简单设置</value>
   </data>
   <data name="AdvancedSettings" xml:space="preserve">
-    <value>Advanced Settings</value>
+    <value>高级设置</value>
   </data>
   <data name="SimpleModeNote" xml:space="preserve">
-    <value> Note: This mode handles both vision and text tasks. Please use a Multimodal model (e.g., gpt-4o, llava).</value>
+    <value>⚠️ 注意：此模式处理视觉和文本任务。请使用多模态模型（如 gpt-4o, llava）。</value>
   </data>
   <data name="Provider" xml:space="preserve">
-    <value>Provider:</value>
+    <value>提供商：</value>
   </data>
   <data name="ApiUrl" xml:space="preserve">
-    <value>API URL:</value>
+    <value>API 地址：</value>
   </data>
   <data name="ApiKey" xml:space="preserve">
-    <value>API Key:</value>
+    <value>API 密钥：</value>
   </data>
   <data name="Model" xml:space="preserve">
-    <value>Model:</value>
+    <value>模型：</value>
   </data>
   <data name="HeaderDetection" xml:space="preserve">
-    <value>Header Detection</value>
+    <value>表头检测</value>
   </data>
   <data name="RequiresMultimodal" xml:space="preserve">
-    <value> Requires Multimodal Model (Vision capable)</value>
+    <value>⚠️ 需要多模态模型（具备视觉能力）</value>
   </data>
   <data name="DataWriteSection" xml:space="preserve">
-    <value>Data Write</value>
+    <value>数据写入</value>
   </data>
   <data name="DataOperation" xml:space="preserve">
-    <value>Data Operation</value>
+    <value>数据操作</value>
   </data>
   <data name="TextOnlySufficient" xml:space="preserve">
-    <value>? Text-only model is sufficient (Code Generation)</value>
+    <value>ℹ️ 纯文本模型即可（代码生成）</value>
   </data>
   <data name="VBAEnvironmentDetection" xml:space="preserve">
-    <value>VBA Environment Detection &amp; Self-healing</value>
+    <value>VBA 环境检测与自修复</value>
   </data>
   <data name="TextOnlySufficientSimple" xml:space="preserve">
-    <value>? Text-only model is sufficient</value>
+    <value>ℹ️ 纯文本模型即可</value>
   </data>
   <data name="OK" xml:space="preserve">
-    <value>OK</value>
+    <value>确定</value>
   </data>
   <data name="Cancel" xml:space="preserve">
-    <value>Cancel</value>
+    <value>取消</value>
   </data>
   <data name="SelectedInfo" xml:space="preserve">
-    <value>Selected: {0} ({1}R x {2}C)</value>
+    <value>已选择：{0} ({1}行 x {2}列)</value>
   </data>
   <data name="HeaderCached" xml:space="preserve">
-    <value> [Header Cached]</value>
+    <value> [表头已缓存]</value>
   </data>
   <data name="AppTitle" xml:space="preserve">
     <value>Excel Sniper II</value>
