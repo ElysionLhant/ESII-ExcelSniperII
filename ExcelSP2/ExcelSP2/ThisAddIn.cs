@@ -15,7 +15,7 @@ namespace ExcelSP2
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
-            var taskPaneControl = new TaskPaneControl();
+            var taskPaneControl = new TaskPaneHostControl();
             myTaskPane = this.CustomTaskPanes.Add(taskPaneControl, "AI Excel Filler");
             myTaskPane.Width = 320;
             myTaskPane.Visible = true;
