@@ -58,27 +58,33 @@
 - **网络**：HttpClient (TLS 1.2)
 - **数据**：JSON 序列化存储
 
-## 如何构建与运行
+## 安装与运行
 
+### 方式一：发布版安装 (推荐普通用户)
+1. **下载**：在 GitHub Releases 页面下载最新的 `ExcelSP2_Release.zip` 压缩包。
+2. **解压**：将压缩包解压到任意文件夹。
+3. **安装**：双击运行 `setup.exe`。
+4. **完成**：安装完成后打开 Excel，插件将自动加载。
+
+### 方式二：源码版构建 (推荐开发者)
 1. **环境要求**：
    - Windows 操作系统
    - Visual Studio 2019+ (需安装 "Office/SharePoint 开发" 工作负载)
    - Microsoft Excel
-
 2. **打开项目**：
-   - 打开 `ExcelSP2/ExcelSP2.sln`。
-
+   - 打开 `ExcelSP2.sln`。
 3. **编译运行**：
    - 按 F5。Visual Studio 会自动编译并启动 Excel。
 
-4. **宏功能配置**：
-   - 打开 Excel，点击左上角的 **"文件" (File)**。
-   - 选择左下角的 **"选项" (Options)**。
-   - 在弹出窗口中，点击左侧的 **"信任中心" (Trust Center)**。
-   - 点击右侧的 **"信任中心设置..." (Trust Center Settings...)** 按钮。
-   - 在新窗口左侧选择 **"宏设置" (Macro Settings)**。
-   - 勾选 **"信任对 VBA 工程对象模型的访问" (Trust access to the VBA project object model)**。
-   - 点击确定保存。
+### 必读：宏功能配置 (所有用户)
+为了让插件能够自动生成和运行 VBA 代码，必须在 Excel 中开启权限：
+1. 打开 Excel，点击左上角的 **"文件" (File)**。
+2. 选择左下角的 **"选项" (Options)**。
+3. 在弹出窗口中，点击左侧的 **"信任中心" (Trust Center)**。
+4. 点击右侧的 **"信任中心设置..." (Trust Center Settings...)** 按钮。
+5. 在新窗口左侧选择 **"宏设置" (Macro Settings)**。
+6. 勾选 **"信任对 VBA 工程对象模型的访问" (Trust access to the VBA project object model)**。
+7. 点击确定保存。
 
 ## 使用指南
 

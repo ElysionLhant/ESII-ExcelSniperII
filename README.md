@@ -63,22 +63,29 @@ This is an Excel VSTO Add-in based on .NET Framework 4.7.2, deeply integrated wi
 - **Network**: HttpClient (TLS 1.2)
 - **Data**: JSON Serialization
 
-## How to Build & Run
+## Installation & Run
 
+### Option 1: Release Version (Recommended for Users)
+1. **Download**: Get the latest `ExcelSP2_Release.zip` from the GitHub Releases page.
+2. **Unzip**: Extract the zip file to any folder.
+3. **Install**: Run `setup.exe`.
+4. **Done**: Open Excel, and the add-in will be loaded automatically.
+
+### Option 2: Source Code Build (Recommended for Developers)
 1. **Prerequisites**:
    - Windows OS
    - Visual Studio 2019+ (with "Office/SharePoint development" workload)
    - Microsoft Excel
-
 2. **Open Project**:
-   - Open `ExcelSP2/ExcelSP2.sln`.
-
+   - Open `ExcelSP2.sln`.
 3. **Build & Run**:
    - Press F5. Visual Studio will build and start Excel.
 
-4. **Macro Configuration**:
-   - In Excel: **File > Options > Trust Center > Trust Center Settings > Macro Settings**.
-   - Check **Trust access to the VBA project object model**.
+### Important: Macro Configuration (For All Users)
+To allow the plugin to generate and execute VBA code, you must enable permissions in Excel:
+1. Go to **File > Options > Trust Center > Trust Center Settings > Macro Settings**.
+2. Check **Trust access to the VBA project object model**.
+3. Click OK to save.
 
 ## User Guide
 
