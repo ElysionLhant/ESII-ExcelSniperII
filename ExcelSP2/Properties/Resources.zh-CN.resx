@@ -49,7 +49,7 @@
     <value>参考现有数据</value>
   </data>
   <data name="MacroLibrary" xml:space="preserve">
-    <value>宏库</value>
+    <value>宏仓库</value>
   </data>
   <data name="Run" xml:space="preserve">
     <value>运行</value>
