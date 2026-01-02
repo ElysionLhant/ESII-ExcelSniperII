@@ -337,6 +337,12 @@ namespace ExcelSP2
             attachments.Add(new AttachmentItem { FilePath = filePath, FileName = Path.GetFileName(filePath) });
         }
 
+        private void BtnClearContext_Click(object sender, RoutedEventArgs e)
+        {
+            attachments.Clear();
+            txtContext.Text = "";
+        }
+
         // --- Prompt Logic ---
 
         private void RefreshPromptCombo()
@@ -368,16 +374,8 @@ namespace ExcelSP2
 
         private void BtnDeletePrompt_Click(object sender, RoutedEventArgs e)
         {
-            if (cmbPrompts.SelectedIndex >= 0)
-            {
-                if (MessageBox.Show("Delete this preset?", "Confirm", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
-                {
-                    promptPresets.RemoveAt(cmbPrompts.SelectedIndex);
-                    SavePrompts();
-                    RefreshPromptCombo();
-                    txtPrompt.Text = "";
-                }
-            }
+            // Changed to Clear Prompt Text
+            txtPrompt.Text = "";
         }
 
         private void SavePrompts()

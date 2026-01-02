@@ -46,6 +46,7 @@
             <StackPanel Orientation="Horizontal" Margin="0,15,0,0">
                 <TextBlock Text="2. Context Materials" FontWeight="Bold" Margin="3,5,3,0"/>
                 <Button x:Name="btnAddFile" Content="+" Width="25" Height="23" Margin="10,0,0,0" Click="BtnAddFile_Click"/>
+                <Button x:Name="btnClearContext" Content="🗑" Width="25" Height="23" Margin="5,0,0,0" Click="BtnClearContext_Click" ToolTip="Clear Context"/>
             </StackPanel>
 
             <Border Background="White" BorderBrush="Gray" BorderThickness="1" Margin="3,5,3,5" Height="120">
@@ -116,7 +117,7 @@
             <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
                 <ComboBox x:Name="cmbPrompts" Width="160" SelectionChanged="CmbPrompts_SelectionChanged" DisplayMemberPath="Title"/>
                 <Button x:Name="btnSavePrompt" Content="Save" Width="45" Click="BtnSavePrompt_Click"/>
-                <Button x:Name="btnDeletePrompt" Content="Del" Width="40" Click="BtnDeletePrompt_Click"/>
+                <Button x:Name="btnDeletePrompt" Content="🗑" Width="40" Click="BtnDeletePrompt_Click" ToolTip="Clear Prompt Text"/>
             </StackPanel>
             
             <TextBox x:Name="txtPrompt" Height="80" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,5,0,0"/>
