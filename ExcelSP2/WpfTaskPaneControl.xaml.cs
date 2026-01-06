@@ -24,6 +24,7 @@ namespace ExcelSP2
         private string capturedImageBase64;
         private HeaderInfo cachedHeaderInfo;
         private string cachedColumnRange;
+        private int cachedHeaderStartRow = -1;
         private ObservableCollection<AttachmentItem> attachments = new ObservableCollection<AttachmentItem>();
         private List<PromptPreset> promptPresets;
         private List<MacroPreset> macroPresets;
@@ -257,6 +258,7 @@ namespace ExcelSP2
         {
             cachedHeaderInfo = null;
             cachedColumnRange = null;
+            cachedHeaderStartRow = -1;
             btnResetHeader.Visibility = Visibility.Collapsed;
             if (lblSelectionInfo.Text.Contains(" [Header Cached]"))
             {
@@ -806,8 +808,22 @@ namespace ExcelSP2
             btnRun.IsEnabled = false;
             lblStatus.Text = "Processing...";
 
+            string lastLlmContent = null;
+
             try
             {
+                Excel.Worksheet sheet = (Excel.Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+                Excel.Range originalRange = sheet.Range[capturedAddress];
+                
+                // Validate cache against current columns
+                string currentKey = GetColumnRangeKey(originalRange);
+                if (cachedHeaderInfo != null && cachedColumnRange != currentKey)
+                {
+                    cachedHeaderInfo = null;
+                    cachedColumnRange = null;
+                    cachedHeaderStartRow = -1;
+                }
+
                 bool isNewHeaderDetection = false;
 
                 if (cachedHeaderInfo == null)
@@ -817,8 +833,8 @@ namespace ExcelSP2
                     lblStatus.Text = "Detecting Header...";
                     cachedHeaderInfo = await DetectHeader(capturedImageBase64, headerConfig);
                     
-                    Excel.Range rangeForCache = Globals.ThisAddIn.Application.Range[capturedAddress];
-                    cachedColumnRange = GetColumnRangeKey(rangeForCache);
+                    cachedColumnRange = currentKey;
+                    cachedHeaderStartRow = originalRange.Row;
                     
                     if (!lblSelectionInfo.Text.Contains(" [Header Cached]"))
                     {
@@ -827,12 +843,18 @@ namespace ExcelSP2
                     }
                 }
 
-                Excel.Worksheet sheet = (Excel.Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
-                Excel.Range originalRange = sheet.Range[capturedAddress];
-                
                 int startRow = originalRange.Row;
-                
-                if (isNewHeaderDetection)
+
+                // Adjust startRow to protect header if we are writing into the header area
+                if (cachedHeaderInfo != null && cachedHeaderStartRow != -1)
+                {
+                    int headerEndRow = cachedHeaderStartRow + cachedHeaderInfo.HeaderRows - 1;
+                    if (startRow <= headerEndRow && startRow >= cachedHeaderStartRow)
+                    {
+                        startRow = headerEndRow + 1;
+                    }
+                }
+                else if (isNewHeaderDetection)
                 {
                     startRow += cachedHeaderInfo.HeaderRows;
                 }
@@ -965,6 +987,7 @@ namespace ExcelSP2
 
                     dynamic result = serializer.Deserialize<dynamic>(responseString);
                     string llmContent = result["choices"][0]["message"]["content"];
+                    lastLlmContent = llmContent;
                     
                     llmContent = llmContent.Replace("```json", "").Replace("```", "").Trim();
                     
@@ -978,11 +1001,38 @@ namespace ExcelSP2
             catch (Exception ex)
             {
                 lblStatus.Text = "Error: " + ex.Message;
-                MessageBox.Show(ex.ToString());
+                if (!string.IsNullOrEmpty(lastLlmContent))
+                {
+                   txtErrorMessage.Text = ex.Message;
+                   txtRawResponse.Text = lastLlmContent;
+                   errorOverlay.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    MessageBox.Show(ex.ToString());
+                }
             }
             finally
             {
                 btnRun.IsEnabled = true;
+            }
+        }
+
+        private void BtnCloseError_Click(object sender, RoutedEventArgs e)
+        {
+            errorOverlay.Visibility = Visibility.Collapsed;
+        }
+
+        private void BtnCopyErrorContent_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Clipboard.SetText(txtRawResponse.Text);
+                MessageBox.Show("Content copied to clipboard.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Failed to copy: " + ex.Message);
             }
         }
 

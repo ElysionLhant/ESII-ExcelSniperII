@@ -81,11 +81,12 @@
 
     </UserControl.Resources>
     
-    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="15">
-        <StackPanel>
+    <Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="15">
+            <StackPanel>
             
-            <!-- Selection Section -->
-            <StackPanel Margin="0,0,0,24">
+                <!-- Selection Section -->
+                <StackPanel Margin="0,0,0,24">
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                     <TextBlock Text="&#xE722;" Style="{StaticResource SectionHeaderIcon}"/>
                     <TextBlock Text="{x:Static properties:Resources.Selection}" Style="{StaticResource SectionHeaderTitle}"/>
@@ -94,8 +95,8 @@
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                     <Button x:Name="btnCapture" Content="{x:Static properties:Resources.Capture}" Click="BtnCapture_Click"/>
                     <Button x:Name="btnPreview" Content="{x:Static properties:Resources.Preview}" Visibility="Collapsed" Click="BtnPreview_Click" MouseEnter="BtnPreview_MouseEnter" MouseLeave="BtnPreview_MouseLeave"/>
-                    <Button x:Name="btnClearCapture" Content="" Width="30" Visibility="Collapsed" Click="BtnClearCapture_Click" ToolTip="Clear Selection"/>
-                    <Button x:Name="btnResetHeader" Content="{x:Static properties:Resources.Reset}" Visibility="Collapsed" Click="BtnResetHeader_Click"/>
+                    <Button x:Name="btnClearCapture" Content="&#xE711;" FontFamily="Segoe MDL2 Assets" Width="30" Padding="0" Visibility="Collapsed" Click="BtnClearCapture_Click" ToolTip="Clear Selection"/>
+                    <Button x:Name="btnResetHeader" Content="&#xE894;" FontFamily="Segoe MDL2 Assets" Width="30" Padding="0" Visibility="Collapsed" Click="BtnResetHeader_Click" ToolTip="Reset Header Cache"/>
                 </StackPanel>
                 
                 <TextBlock x:Name="lblSelectionInfo" Text="{x:Static properties:Resources.NoSelectionCaptured}" Foreground="#666666" TextWrapping="Wrap" Margin="0,4,0,0"/>
@@ -247,6 +248,33 @@
                 <TextBlock x:Name="lblStatus" Text="{x:Static properties:Resources.Ready}" Foreground="#0078D7" TextWrapping="Wrap" Margin="0,8,0,0" HorizontalAlignment="Center"/>
             </StackPanel>
             
-        </StackPanel>
-    </ScrollViewer>
+            </StackPanel>
+        </ScrollViewer>
+        
+        <!-- Error Overlay -->
+        <Grid x:Name="errorOverlay" Visibility="Collapsed" Background="#7F000000">
+            <Border Background="White" Margin="40" CornerRadius="4" VerticalAlignment="Center" Padding="15" MaxHeight="500">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    
+                    <StackPanel Grid.Row="0" Margin="0,0,0,10">
+                        <TextBlock Text="Error Occurred" FontWeight="Bold" FontSize="16" Foreground="#D32F2F"/>
+                        <TextBlock x:Name="txtErrorMessage" Text="Error details here..." Foreground="#D32F2F" TextWrapping="Wrap" Margin="0,5,0,0"/>
+                        <TextBlock Text="Raw LLM Response:" FontWeight="SemiBold" Margin="0,10,0,5"/>
+                    </StackPanel>
+                    
+                    <TextBox Grid.Row="1" x:Name="txtRawResponse" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" IsReadOnly="True" FontFamily="Consolas" FontSize="11" Background="#F5F5F5" Padding="5"/>
+                    
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                        <Button Content="Copy Content" Click="BtnCopyErrorContent_Click" Background="#E0E0E0" Margin="0,0,10,0"/>
+                        <Button Content="Close" Click="BtnCloseError_Click" Background="#D32F2F" Foreground="White"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
 </UserControl>
